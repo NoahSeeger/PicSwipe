@@ -1,39 +1,56 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { Stack } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const router = useRouter();
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+    const checkFirstLaunch = async () => {
+      try {
+        const value = await AsyncStorage.getItem("hasLaunched");
+        if (value === null) {
+          await AsyncStorage.setItem("hasLaunched", "true");
+          setIsFirstLaunch(true);
+          router.replace("/onboarding");
+        } else {
+          setIsFirstLaunch(false);
+        }
+      } catch (error) {
+        console.error("Error checking first launch:", error);
+      }
+    };
 
-  if (!loaded) {
-    return null;
-  }
+    checkFirstLaunch();
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: "#000" },
+            animation: "fade",
+            animationDuration: 200,
+            presentation: "card",
+          }}
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="year" />
+          <Stack.Screen
+            name="onboarding"
+            options={{
+              gestureEnabled: false,
+              animation: "fade",
+            }}
+          />
+        </Stack>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
