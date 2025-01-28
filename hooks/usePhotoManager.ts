@@ -300,7 +300,9 @@ export const usePhotoManager = () => {
       const date = new Date(year, month, 1);
       console.log("PhotoManager: Created date object:", date.toISOString());
 
+      // Set current month before any async operations to ensure it's not null
       setCurrentMonth(date);
+      const currentMonthDate = date; // Store in local variable to avoid null checks
 
       const startOfMonth = new Date(year, month, 1);
       const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
@@ -353,10 +355,29 @@ export const usePhotoManager = () => {
         setCurrentIndex(0);
         setIsMonthComplete(false);
       } else {
-        console.log("PhotoManager: No photos found, resetting state");
+        console.log(
+          "PhotoManager: No photos found, finding previous month with photos"
+        );
         setMonthPhotos([]);
         setCurrentIndex(0);
         setIsMonthComplete(true);
+
+        // Find the previous month with photos using the local date variable
+        const previousMonthWithPhotos = await findPreviousMonthWithPhotos(
+          currentMonthDate
+        );
+
+        if (!previousMonthWithPhotos) {
+          console.log("PhotoManager: No previous months with photos found");
+          setIsLastMonth(true);
+        } else {
+          console.log(
+            "PhotoManager: Found previous month with photos:",
+            previousMonthWithPhotos.toLocaleString()
+          );
+          setCurrentMonth(previousMonthWithPhotos);
+          await loadMonthPhotos(previousMonthWithPhotos);
+        }
       }
     } catch (error) {
       console.error("PhotoManager: Error in setInitialMonth:", error);

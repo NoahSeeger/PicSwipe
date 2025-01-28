@@ -1,10 +1,10 @@
 import React from "react";
 import { StyleSheet, View, ScrollView, Pressable } from "react-native";
-import { ThemedView } from "../ThemedView";
-import { ThemedText } from "../ThemedText";
+import { Text } from "react-native";
 import { IconSymbol } from "../ui/IconSymbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useTheme } from "@/components/ThemeProvider";
 
 type MonthData = {
   month: string;
@@ -18,23 +18,80 @@ type Props = {
   onClose: () => void;
 };
 
-export const MonthsView = ({ year, months, onClose }: Props) => {
+export function MonthsView({ year, months, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors } = useTheme();
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    backText: {
+      fontSize: 17,
+      color: colors.primary,
+      marginLeft: -4,
+    },
+    title: {
+      fontSize: 34,
+      fontWeight: "bold",
+      color: colors.text,
+      lineHeight: 41,
+      includeFontPadding: false,
+    },
+    scrollView: {
+      flex: 1,
+      paddingHorizontal: 16,
+      paddingTop: 8,
+    },
+    monthItem: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      marginBottom: 8,
+      padding: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    monthContainer: {
+      flex: 1,
+    },
+    monthName: {
+      fontSize: 17,
+      fontWeight: "500",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    photoCount: {
+      fontSize: 15,
+      color: colors.secondary,
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+  });
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={[styles.header]}>
+    <View style={styles.container}>
+      <View style={styles.header}>
         <Pressable
           onPress={onClose}
           style={[styles.backButton, { marginTop: insets.top }]}
         >
-          <IconSymbol name="chevron.left" size={28} color="#007AFF" />
-          <ThemedText style={styles.backText}>Übersicht</ThemedText>
+          <IconSymbol name="chevron.left" size={28} color={colors.primary} />
+          <Text style={styles.backText}>Übersicht</Text>
         </Pressable>
-        <ThemedText style={[styles.title, { includeFontPadding: false }]}>
-          {year}
-        </ThemedText>
+        <Text style={styles.title}>{year}</Text>
       </View>
 
       <ScrollView
@@ -58,72 +115,17 @@ export const MonthsView = ({ year, months, onClose }: Props) => {
             }}
           >
             <View style={styles.monthContainer}>
-              <ThemedText style={styles.monthName}>{month.month}</ThemedText>
-              <ThemedText style={styles.photoCount}>
-                {month.photoCount} Elemente
-              </ThemedText>
+              <Text style={styles.monthName}>{month.month}</Text>
+              <Text style={styles.photoCount}>{month.photoCount} Elemente</Text>
             </View>
-            <IconSymbol name="chevron.right" size={20} color="#666" />
+            <IconSymbol
+              name="chevron.right"
+              size={20}
+              color={colors.secondary}
+            />
           </Pressable>
         ))}
       </ScrollView>
-    </ThemedView>
+    </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  backText: {
-    fontSize: 17,
-    color: "#007AFF",
-    marginLeft: -4,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: "bold",
-    color: "#fff",
-    lineHeight: 41,
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  monthItem: {
-    backgroundColor: "#1C1C1E",
-    borderRadius: 12,
-    marginBottom: 8,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  monthContainer: {
-    flex: 1,
-  },
-  monthName: {
-    fontSize: 17,
-    fontWeight: "500",
-    color: "#fff",
-    marginBottom: 4,
-  },
-  photoCount: {
-    fontSize: 15,
-    color: "#8E8E93",
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-});
+}

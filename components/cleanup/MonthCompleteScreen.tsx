@@ -1,9 +1,15 @@
 import React, { useState, useRef } from "react";
-import { StyleSheet, View, Pressable, Alert, Animated } from "react-native";
-import { ThemedView } from "../ThemedView";
-import { ThemedText } from "../ThemedText";
+import {
+  StyleSheet,
+  View,
+  Pressable,
+  Alert,
+  Animated,
+  Text,
+} from "react-native";
 import { IconSymbol } from "../ui/IconSymbol";
 import { DeletePreviewModal } from "./DeletePreviewModal";
+import { useTheme } from "@/components/ThemeProvider";
 
 type Props = {
   month: string;
@@ -24,7 +30,7 @@ const formatFileSize = (bytes: number) => {
 
 const LONG_PRESS_DURATION = 2000;
 
-export const MonthCompleteScreen = ({
+export function MonthCompleteScreen({
   month,
   year,
   photosToDelete,
@@ -34,7 +40,8 @@ export const MonthCompleteScreen = ({
   photos,
   onRemovePhoto,
   isLastMonth = false,
-}: Props) => {
+}: Props) {
+  const { colors } = useTheme();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const longPressProgress = useRef(new Animated.Value(0)).current;
   const [isLongPressing, setIsLongPressing] = useState(false);
@@ -75,7 +82,7 @@ export const MonthCompleteScreen = ({
   });
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <IconSymbol
           name={isLastMonth ? "checkmark.circle.fill" : "checkmark.circle"}
@@ -83,25 +90,25 @@ export const MonthCompleteScreen = ({
           color="#34C759"
         />
 
-        <ThemedText style={styles.title}>
+        <Text style={[styles.title, { color: colors.text }]}>
           {isLastMonth ? "Alle Fotos durchgesehen!" : "Monat abgeschlossen!"}
-        </ThemedText>
+        </Text>
 
-        <ThemedText style={styles.message}>
+        <Text style={[styles.message, { color: colors.text }]}>
           {isLastMonth
             ? `Du hast alle verfügbaren Fotos durchgearbeitet.`
             : `Du hast alle Bilder des Monats ${month} ${year} durchgearbeitet.`}
-        </ThemedText>
+        </Text>
 
         {photosToDelete > 0 ? (
-          <ThemedText style={styles.stats}>
+          <Text style={[styles.stats, { color: colors.secondary }]}>
             {photosToDelete} Foto{photosToDelete !== 1 ? "s" : ""} (
             {formatFileSize(totalSize)}) zum Löschen markiert
-          </ThemedText>
+          </Text>
         ) : (
-          <ThemedText style={styles.stats}>
+          <Text style={[styles.stats, { color: colors.secondary }]}>
             Keine Fotos zum Löschen markiert
-          </ThemedText>
+          </Text>
         )}
 
         <View style={styles.buttonContainer}>
@@ -116,13 +123,13 @@ export const MonthCompleteScreen = ({
               ]}
             >
               <View style={styles.buttonContent}>
-                <ThemedText style={styles.buttonText}>
+                <Text style={styles.buttonText}>
                   Jetzt löschen
                   {"\n"}
-                  <ThemedText style={styles.buttonSubtext}>
+                  <Text style={styles.buttonSubtext}>
                     Lang drücken zum sofortigen Löschen
-                  </ThemedText>
-                </ThemedText>
+                  </Text>
+                </Text>
                 {isLongPressing && (
                   <Animated.View
                     style={[
@@ -147,9 +154,7 @@ export const MonthCompleteScreen = ({
                 pressed && styles.buttonPressed,
               ]}
             >
-              <ThemedText style={styles.buttonText}>
-                Weiter zum nächsten Monat
-              </ThemedText>
+              <Text style={styles.buttonText}>Weiter zum nächsten Monat</Text>
             </Pressable>
           )}
         </View>
@@ -166,16 +171,15 @@ export const MonthCompleteScreen = ({
         }}
         totalSize={totalSize}
       />
-    </ThemedView>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#121214",
   },
   content: {
     alignItems: "center",
@@ -210,7 +214,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: "#FF453A",
-    color: "white",
   },
   deleteButtonPressed: {
     backgroundColor: "#FF3B30",
@@ -220,15 +223,17 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     backgroundColor: "#007AFF",
-    color: "white",
   },
   buttonText: {
     fontSize: 16,
     fontWeight: "600",
+    color: "white",
+    textAlign: "center",
   },
   buttonSubtext: {
     fontSize: 12,
     opacity: 0.8,
+    color: "white",
   },
   buttonPressed: {
     opacity: 0.8,

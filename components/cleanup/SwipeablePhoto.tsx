@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   Image,
   View,
-  ImageURISource,
+  Text,
 } from "react-native";
 import {
   PanGestureHandler,
@@ -20,7 +20,6 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { IconSymbol } from "../ui/IconSymbol";
-import { ThemedText } from "../ThemedText";
 
 const { width, height } = Dimensions.get("window");
 const CONTAINER_WIDTH = width * 0.9;
@@ -34,7 +33,6 @@ type Props = {
   onPress: () => void;
 };
 
-// Statische Basis-Styles
 const baseStyles = StyleSheet.create({
   overlay: {
     position: "absolute",
@@ -54,12 +52,7 @@ const baseStyles = StyleSheet.create({
   },
 });
 
-export const SwipeablePhoto = ({
-  uri,
-  nextPhotos,
-  onSwipe,
-  onPress,
-}: Props) => {
+export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
   const translateX = useSharedValue(0);
   const rotation = useSharedValue(0);
   const isAnimatingRef = useRef(false);
@@ -174,7 +167,6 @@ export const SwipeablePhoto = ({
     backgroundColor: "rgba(52, 199, 89, 0.4)",
   }));
 
-  // Dynamische Styles basierend auf containerSize
   const getStyles = (size: { width: number; height: number }) => ({
     container: {
       width: size.width,
@@ -217,7 +209,7 @@ export const SwipeablePhoto = ({
 
             <Animated.View style={[baseStyles.overlay, trashOverlayStyle]}>
               <IconSymbol name="trash" size={48} color="white" />
-              <ThemedText style={baseStyles.overlayText}>Trash</ThemedText>
+              <Text style={baseStyles.overlayText}>Trash</Text>
             </Animated.View>
 
             <Animated.View style={[baseStyles.overlay, keepOverlayStyle]}>
@@ -226,11 +218,11 @@ export const SwipeablePhoto = ({
                 size={48}
                 color="white"
               />
-              <ThemedText style={baseStyles.overlayText}>Keep</ThemedText>
+              <Text style={baseStyles.overlayText}>Keep</Text>
             </Animated.View>
           </TouchableOpacity>
         </Animated.View>
       </PanGestureHandler>
     </View>
   );
-};
+}

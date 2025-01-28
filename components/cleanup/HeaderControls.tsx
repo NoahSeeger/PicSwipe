@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { ThemedText } from "../ThemedText";
+import { View, TouchableOpacity, StyleSheet, Alert, Text } from "react-native";
 import { IconSymbol } from "../ui/IconSymbol";
 import { PhotoToDelete } from "../../hooks/usePhotoManager";
 import { DeletePreviewModal } from "./DeletePreviewModal";
+import { useTheme } from "@/components/ThemeProvider";
 
 type Props = {
   previousPhoto: any;
@@ -24,7 +24,7 @@ const formatFileSize = (bytes: number) => {
   return `${mb.toFixed(1)} MB`;
 };
 
-export const HeaderControls = ({
+export function HeaderControls({
   previousPhoto,
   photosToDelete,
   onUndo,
@@ -33,16 +33,9 @@ export const HeaderControls = ({
   progress,
   currentDate,
   onRemoveFromDeleteList,
-}: Props) => {
+}: Props) {
+  const { colors } = useTheme();
   const [showDeletePreview, setShowDeletePreview] = useState(false);
-
-  const totalSize = photosToDelete.reduce(
-    (acc, photo) => acc + (photo.fileSize || 0),
-    0
-  );
-
-  console.log("HeaderControls photosToDelete:", photosToDelete); // Debug log
-  console.log("HeaderControls totalSize:", totalSize); // Debug log
 
   const formatDate = (date?: Date) => {
     if (!date) return "";
@@ -53,69 +46,141 @@ export const HeaderControls = ({
     }).format(date);
   };
 
-  const handleDeletePress = () => {
-    if (photosToDelete.length === 0) return;
-    setShowDeletePreview(true);
-  };
-
-  const handleRemovePhoto = (id: string) => {
-    onRemoveFromDeleteList?.(id);
-  };
-
-  const handleConfirmDelete = async () => {
-    const success = await onDelete();
-    if (success) {
-      setShowDeletePreview(false);
-    }
-  };
+  const styles = StyleSheet.create({
+    header: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      padding: 20,
+      zIndex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    leftSection: {
+      flex: 1,
+      alignItems: "flex-start",
+    },
+    centerSection: {
+      flex: 2,
+      alignItems: "center",
+    },
+    rightSection: {
+      flex: 1,
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 10,
+    },
+    progressText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    dateText: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.text,
+    },
+    headerButton: {
+      position: "relative",
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    badge: {
+      position: "absolute",
+      top: -5,
+      right: -5,
+      backgroundColor: colors.deleteButton,
+      borderRadius: 12,
+      minWidth: 24,
+      height: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 6,
+      borderWidth: 2.5,
+      borderColor: "#FF3B30",
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    badgeText: {
+      color: "#FFFFFF",
+      fontSize: 13,
+      fontWeight: "bold",
+      textAlign: "center",
+      lineHeight: 20,
+    },
+    sizeIndicator: {
+      position: "absolute",
+      top: 44,
+      right: 0,
+      backgroundColor: "transparent",
+    },
+    sizeText: {
+      fontSize: 12,
+      color: colors.deleteButton,
+      fontWeight: "500",
+    },
+  });
 
   return (
     <>
       <View style={[styles.header, { marginTop: topInset }]}>
         <View style={styles.leftSection}>
-          <ThemedText style={styles.progressText}>
+          <Text style={styles.progressText}>
             {progress.current} / {progress.total}
-          </ThemedText>
+          </Text>
         </View>
         <View style={styles.centerSection}>
-          <ThemedText style={styles.dateText}>
-            {formatDate(currentDate)}
-          </ThemedText>
+          <Text style={styles.dateText}>{formatDate(currentDate)}</Text>
         </View>
         <View style={styles.rightSection}>
           {previousPhoto && (
-            <TouchableOpacity
-              style={[styles.headerButton, styles.undoButton]}
-              onPress={onUndo}
-            >
+            <TouchableOpacity style={styles.headerButton} onPress={onUndo}>
               <IconSymbol
                 name="arrow.uturn.backward"
                 size={24}
-                color="#007AFF"
+                color={colors.primary}
               />
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={[styles.headerButton, styles.deleteButton]}
-            onPress={handleDeletePress}
+            style={styles.headerButton}
+            onPress={() => setShowDeletePreview(true)}
             disabled={photosToDelete.length === 0}
           >
             <IconSymbol
               name="trash"
               size={24}
-              color={photosToDelete.length > 0 ? "#FF3B30" : "#999"}
+              color={
+                photosToDelete.length > 0
+                  ? colors.deleteButton
+                  : colors.secondary
+              }
             />
             {photosToDelete.length > 0 && (
               <>
                 <View style={styles.badge}>
-                  <ThemedText style={styles.badgeText}>
-                    {photosToDelete.length}
-                  </ThemedText>
+                  <Text style={styles.badgeText}>{photosToDelete.length}</Text>
                 </View>
                 <View style={styles.sizeIndicator}>
-                  <ThemedText style={styles.sizeText}>
-                    {formatFileSize(totalSize)}
-                  </ThemedText>
+                  <Text style={styles.sizeText}>
+                    {formatFileSize(
+                      photosToDelete.reduce(
+                        (acc, photo) => acc + (photo.fileSize || 0),
+                        0
+                      )
+                    )}
+                  </Text>
                 </View>
               </>
             )}
@@ -127,90 +192,18 @@ export const HeaderControls = ({
         visible={showDeletePreview}
         onClose={() => setShowDeletePreview(false)}
         photos={photosToDelete}
-        onRemovePhoto={handleRemovePhoto}
-        onConfirmDelete={handleConfirmDelete}
-        totalSize={totalSize}
+        onRemovePhoto={onRemoveFromDeleteList}
+        onConfirmDelete={async () => {
+          const success = await onDelete();
+          if (success) {
+            setShowDeletePreview(false);
+          }
+        }}
+        totalSize={photosToDelete.reduce(
+          (acc, photo) => acc + (photo.fileSize || 0),
+          0
+        )}
       />
     </>
   );
-};
-
-const styles = StyleSheet.create({
-  header: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    zIndex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  leftSection: {
-    flex: 1,
-    alignItems: "flex-start",
-  },
-  centerSection: {
-    flex: 2,
-    alignItems: "center",
-  },
-  rightSection: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  dateText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  headerButton: {
-    position: "relative",
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  undoButton: {
-    // Entferne den Hintergrund
-  },
-  deleteButton: {
-    // Entferne den Hintergrund
-  },
-  badge: {
-    position: "absolute",
-    top: -5,
-    right: -5,
-    backgroundColor: "#FF3B30",
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 5,
-  },
-  badgeText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  sizeIndicator: {
-    position: "absolute",
-    top: 44,
-    right: 0,
-    backgroundColor: "transparent",
-  },
-  sizeText: {
-    fontSize: 12,
-    color: "#FF3B30",
-    fontWeight: "500",
-  },
-});
+}

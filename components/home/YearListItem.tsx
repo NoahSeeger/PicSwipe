@@ -1,56 +1,90 @@
 import React from "react";
-import { StyleSheet, View, Pressable } from "react-native";
-import { ThemedText } from "../ThemedText";
-import { IconSymbol } from "../ui/IconSymbol";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { useTheme } from "@/components/ThemeProvider";
 
 type Props = {
   year: number;
-  months: any[];
+  months: Array<{ month: number }>;
   totalPhotos: number;
   onPress: () => void;
 };
 
-export const YearListItem = ({ year, totalPhotos, onPress }: Props) => {
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mär",
+  "Apr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Dez",
+];
+
+export function YearListItem({ year, months, totalPhotos, onPress }: Props) {
+  const { colors } = useTheme();
+
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    year: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: colors.text,
+    },
+    totalPhotos: {
+      fontSize: 16,
+      color: colors.secondary,
+    },
+    monthsContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    monthBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+    },
+    monthText: {
+      color: "#FFFFFF",
+      fontSize: 12,
+    },
+  });
+
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.container, pressed && { opacity: 0.7 }]}
       onPress={onPress}
     >
-      <View style={styles.content}>
-        <ThemedText style={styles.monthName}>{year}</ThemedText>
-        <ThemedText style={styles.photoCount}>
-          {totalPhotos} Elemente
-        </ThemedText>
+      <View style={styles.header}>
+        <Text style={styles.year}>{year}</Text>
+        <Text style={styles.totalPhotos}>
+          {totalPhotos.toLocaleString()} Fotos
+        </Text>
       </View>
-      <IconSymbol name="chevron.right" size={20} color="#666" />
+      <View style={styles.monthsContainer}>
+        {months.map((month) => (
+          <View key={month.month} style={styles.monthBadge}>
+            <Text style={styles.monthText}>
+              {MONTH_NAMES[month.month - 1] || ""}
+            </Text>
+          </View>
+        ))}
+      </View>
     </Pressable>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#1C1C1E",
-    borderRadius: 12,
-    marginBottom: 8,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  content: {
-    flex: 1,
-  },
-  monthName: {
-    fontSize: 17,
-    fontWeight: "500",
-    color: "#fff",
-    marginBottom: 4,
-  },
-  photoCount: {
-    fontSize: 15,
-    color: "#8E8E93",
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-});
+}

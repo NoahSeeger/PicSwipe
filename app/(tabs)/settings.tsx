@@ -1,14 +1,14 @@
 import React from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { ThemedView } from "../../components/ThemedView";
-import { ThemedText } from "../../components/ThemedText";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { usePhotoPermission } from "../../hooks/usePhotoPermission";
+import { usePhotoPermission } from "@/hooks/usePhotoPermission";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function SettingsScreen() {
   const { permissionStatus, requestPermission } = usePhotoPermission();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   const resetOnboarding = async () => {
     try {
@@ -23,20 +23,54 @@ export default function SettingsScreen() {
     }
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 20,
+      paddingTop: insets.top,
+      backgroundColor: colors.background,
+    },
+    section: {
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      marginBottom: 15,
+      color: colors.text,
+    },
+    devOptions: {
+      gap: 10,
+    },
+    button: {
+      backgroundColor: colors.primary,
+      padding: 15,
+      borderRadius: 8,
+      color: "#FFFFFF",
+      textAlign: "center",
+    },
+    buttonDisabled: {
+      backgroundColor: colors.secondary,
+      opacity: 0.5,
+    },
+  });
+
   return (
-    <ThemedView
-      style={[
-        styles.container,
-        { paddingTop: insets.top, paddingBottom: insets.bottom },
-      ]}
-    >
+    <View style={styles.container}>
+      <Text style={styles.title}>Einstellungen</Text>
       <View style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Entwickleroptionen</ThemedText>
+        <Text style={styles.sectionTitle}>Entwickleroptionen</Text>
         <View style={styles.devOptions}>
-          <ThemedText style={styles.button} onPress={resetOnboarding}>
+          <Text style={styles.button} onPress={resetOnboarding}>
             Onboarding zurücksetzen
-          </ThemedText>
-          <ThemedText
+          </Text>
+          <Text
             style={[
               styles.button,
               permissionStatus === "granted" && styles.buttonDisabled,
@@ -46,40 +80,9 @@ export default function SettingsScreen() {
             {permissionStatus === "granted"
               ? "Foto-Zugriff aktiv"
               : "Foto-Zugriff anfordern"}
-          </ThemedText>
+          </Text>
         </View>
       </View>
-    </ThemedView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#121214",
-  },
-  section: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-    color: "#FFFFFF",
-  },
-  devOptions: {
-    gap: 10,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    padding: 15,
-    borderRadius: 8,
-    color: "white",
-    textAlign: "center",
-  },
-  buttonDisabled: {
-    backgroundColor: "#2A2A2C",
-    color: "#808080",
-  },
-});

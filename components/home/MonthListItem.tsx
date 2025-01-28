@@ -1,8 +1,8 @@
 import React from "react";
-import { StyleSheet, View, Pressable } from "react-native";
-import { ThemedText } from "../ThemedText";
+import { StyleSheet, View, Pressable, Text } from "react-native";
 import { IconSymbol } from "../ui/IconSymbol";
 import { router } from "expo-router";
+import { useTheme } from "@/components/ThemeProvider";
 
 type Props = {
   month: string;
@@ -12,13 +12,46 @@ type Props = {
   monthIndex: number;
 };
 
-export const MonthListItem = ({
+export function MonthListItem({
   month,
   year,
   photoCount,
   isProcessed,
   monthIndex,
-}: Props) => {
+}: Props) {
+  const { colors } = useTheme();
+
+  const styles = StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 16,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    pressed: {
+      opacity: 0.7,
+      backgroundColor: colors.pressed,
+    },
+    leftContent: {
+      flex: 1,
+    },
+    rightContent: {
+      marginLeft: 16,
+    },
+    monthYear: {
+      fontSize: 17,
+      fontWeight: "600",
+      marginBottom: 4,
+      color: colors.text,
+    },
+    stats: {
+      fontSize: 15,
+      color: colors.secondary,
+    },
+  });
+
   const handlePress = () => {
     router.push({
       pathname: "/(tabs)/cleanup",
@@ -32,51 +65,21 @@ export const MonthListItem = ({
       onPress={handlePress}
     >
       <View style={styles.leftContent}>
-        <ThemedText style={styles.monthYear}>
+        <Text style={styles.monthYear}>
           {month} {year}
-        </ThemedText>
-        <ThemedText style={styles.stats}>
+        </Text>
+        <Text style={styles.stats}>
           {photoCount} Foto{photoCount !== 1 ? "s" : ""}
-        </ThemedText>
+        </Text>
       </View>
 
       <View style={styles.rightContent}>
         {isProcessed ? (
           <IconSymbol name="checkmark.circle.fill" size={24} color="#34C759" />
         ) : (
-          <IconSymbol name="chevron.right" size={24} color="#007AFF" />
+          <IconSymbol name="chevron.right" size={24} color={colors.primary} />
         )}
       </View>
     </Pressable>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ccc",
-  },
-  pressed: {
-    opacity: 0.7,
-    backgroundColor: "rgba(0,0,0,0.05)",
-  },
-  leftContent: {
-    flex: 1,
-  },
-  rightContent: {
-    marginLeft: 16,
-  },
-  monthYear: {
-    fontSize: 17,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  stats: {
-    fontSize: 15,
-    opacity: 0.6,
-  },
-});
+}

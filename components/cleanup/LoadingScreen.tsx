@@ -1,28 +1,22 @@
-import React from "react";
-import { StyleSheet, ActivityIndicator, View } from "react-native";
-import { ThemedView } from "../ThemedView";
-import { ThemedText } from "../ThemedText";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { useTheme } from "@/components/ThemeProvider";
 
-export const LoadingScreen = () => {
+export function LoadingScreen() {
+  const { colors } = useTheme();
+
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.content}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <ThemedText style={styles.text}>Lade Fotos...</ThemedText>
-      </View>
-    </ThemedView>
+    <View style={styles.container}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={styles.text}>Lade...</Text>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  content: {
-    alignItems: "center",
-    gap: 20,
   },
   text: {
     fontSize: 16,
