@@ -27,6 +27,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="com.anonymous.PicSwipe"/>
+        <data android:scheme="picswipe"/>
       </intent-filter>
     </activity>
   </application>

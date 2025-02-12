@@ -1,18 +1,21 @@
 import { Tabs } from "expo-router";
 import { IconSymbol } from "../../components/ui/IconSymbol";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function TabLayout() {
+  const { colors, isDark } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#000",
-          borderTopColor: "#333",
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
           borderTopWidth: 0.5,
         },
-        tabBarActiveTintColor: "#fff",
-        tabBarInactiveTintColor: "#666",
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.secondary,
       }}
     >
       <Tabs.Screen

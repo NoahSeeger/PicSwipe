@@ -10,6 +10,7 @@ export const colors = {
     text: "#000000",
     secondary: "#666666",
     card: "#F2F2F7",
+    border: "#E5E5EA",
   },
   dark: {
     primary: "#0A84FF",
@@ -17,6 +18,7 @@ export const colors = {
     text: "#FFFFFF",
     secondary: "#EBEBF5",
     card: "#1C1C1E",
+    border: "#38383A",
   },
 } as const;
 
