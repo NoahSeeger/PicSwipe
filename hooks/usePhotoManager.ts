@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Platform } from "react-native";
 import * as MediaLibrary from "expo-media-library";
 
 export type PhotoToDelete = {
@@ -7,107 +8,225 @@ export type PhotoToDelete = {
   fileSize?: number;
 };
 
+type AssetInfo = MediaLibrary.Asset & {
+  fileSize?: number;
+};
+
+type EnhancedAsset = MediaLibrary.Asset & {
+  uri: string;
+  fileSize: number;
+};
+
+const getAssetInfo = async (
+  asset: MediaLibrary.Asset
+): Promise<EnhancedAsset> => {
+  try {
+    const info = await MediaLibrary.getAssetInfoAsync(asset.id);
+
+    // Für iOS: Verwende nur die localUri, da diese im richtigen Format ist
+    if (Platform.OS === "ios") {
+      if (!info.localUri) {
+        throw new Error("No localUri available for iOS asset");
+      }
+      return {
+        ...asset,
+        uri: info.localUri,
+        // @ts-ignore - fileSize existiert in der iOS Implementation
+        fileSize: info.fileSize || 0,
+      };
+    }
+
+    // Für Android: Verwende die normale uri
+    return {
+      ...asset,
+      uri: asset.uri,
+      // @ts-ignore - fileSize existiert in der iOS Implementation
+      fileSize: info.fileSize || 0,
+    };
+  } catch (error) {
+    console.error("Error getting asset info:", error, {
+      assetId: asset.id,
+      uri: asset.uri,
+    });
+
+    // Fallback: Versuche die Standard-URI zu verwenden
+    return {
+      ...asset,
+      uri: asset.uri,
+      fileSize: 0,
+    };
+  }
+};
+
+// Durchschnittliche Bytes pro Pixel für ein JPEG-Bild (typische Kompression)
+const BYTES_PER_PIXEL = 0.3; // Reduziert von 4 auf 0.3 für realistischere JPEG-Größen
+
+const estimatePhotoSize = (width: number, height: number): number => {
+  // Berechne die Anzahl der Pixel
+  const pixels = width * height;
+
+  // Schätze die Dateigröße basierend auf der typischen JPEG-Kompression
+  const estimatedSize = pixels * BYTES_PER_PIXEL;
+
+  // Füge einen minimalen Overhead hinzu (JPEG-Header etc.)
+  const minSize = 10 * 1024; // Minimale Größe von 10KB
+
+  return Math.max(estimatedSize, minSize);
+};
+
 export const usePhotoManager = () => {
   const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
-  const [monthPhotos, setMonthPhotos] = useState<MediaLibrary.Asset[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [photosToDelete, setPhotosToDelete] = useState<PhotoToDelete[]>([]);
-  const [previousPhoto, setPreviousPhoto] = useState<MediaLibrary.Asset | null>(
+  const [currentAlbumId, setCurrentAlbumId] = useState<string | null>(null);
+  const [currentAlbumTitle, setCurrentAlbumTitle] = useState<string | null>(
     null
   );
+  const [monthPhotos, setMonthPhotos] = useState<AssetInfo[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [photosToDelete, setPhotosToDelete] = useState<PhotoToDelete[]>([]);
+  const [previousPhoto, setPreviousPhoto] = useState<AssetInfo | null>(null);
   const [isMonthComplete, setIsMonthComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState({
+    current: 0,
+    total: 0,
+  });
   const [processedMonths, setProcessedMonths] = useState<Set<string>>(
     new Set()
   );
   const [isLastMonth, setIsLastMonth] = useState(false);
 
-  const loadMonthPhotos = async (date: Date = currentMonth || new Date()) => {
-    if (!date) return;
-
+  const loadPhotos = async (
+    date: Date | null = currentMonth,
+    albumId: string | null = currentAlbumId
+  ) => {
     try {
-      console.log("Loading photos for date:", {
-        year: date.getFullYear(),
-        month: date.getMonth(),
-        fullDate: date.toISOString(),
-      });
-
+      console.log("Loading photos with params:", { date, albumId });
       setIsLoading(true);
+      setLoadingProgress({ current: 0, total: 0 });
       setMonthPhotos([]);
       setCurrentIndex(0);
       setPhotosToDelete([]);
 
-      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-      endOfMonth.setHours(23, 59, 59, 999);
-
-      console.log("Date range:", {
-        start: startOfMonth.toISOString(),
-        end: endOfMonth.toISOString(),
-      });
-
-      // Hole zuerst alle Fotos für den Monat
-      const { assets } = await MediaLibrary.getAssetsAsync({
+      const options: MediaLibrary.AssetsOptions = {
         mediaType: MediaLibrary.MediaType.photo,
         first: 999999,
         sortBy: MediaLibrary.SortBy.creationTime,
-      });
+      };
 
-      // Filtere die Fotos manuell nach dem Datum
-      const monthAssets = assets.filter((asset) => {
-        const assetDate = new Date(asset.creationTime);
-        return assetDate >= startOfMonth && assetDate <= endOfMonth;
-      });
+      // Wenn eine Album-ID vorhanden ist, lade nur Fotos aus diesem Album
+      if (albumId) {
+        console.log("Loading photos from album:", albumId);
+        try {
+          // Hole zuerst alle Alben
+          const albums = await MediaLibrary.getAlbumsAsync();
+          const album = albums.find((a) => a.id === albumId);
 
-      console.log("Found photos:", {
-        total: assets.length,
-        forMonth: monthAssets.length,
-        targetMonth: date.getMonth(),
-        targetYear: date.getFullYear(),
-      });
+          if (!album) {
+            console.error("Album not found:", albumId);
+            return;
+          }
 
-      if (monthAssets.length > 0) {
-        // Lade die Asset-Informationen
-        const loadedAssets = await Promise.all(
-          monthAssets.map(async (asset) => {
+          setCurrentAlbumTitle(album.title);
+
+          const { assets } = await MediaLibrary.getAssetsAsync({
+            ...options,
+            album: album,
+          });
+
+          if (assets.length > 0) {
+            setLoadingProgress({ current: 0, total: assets.length });
+            // Lade die vollständigen Asset-Informationen
+            const loadedAssets = [];
+            for (let i = 0; i < assets.length; i++) {
+              try {
+                const assetInfo = await MediaLibrary.getAssetInfoAsync(
+                  assets[i]
+                );
+                loadedAssets.push({
+                  ...assetInfo,
+                  uri: assetInfo.localUri || assetInfo.uri,
+                });
+                setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
+              } catch (error) {
+                console.error("Error loading asset info:", error);
+                loadedAssets.push(assets[i]);
+              }
+            }
+            setMonthPhotos(loadedAssets);
+            setIsMonthComplete(false);
+          }
+          return;
+        } catch (error) {
+          console.error("Error loading album:", error);
+          return;
+        }
+      }
+
+      // Wenn keine Album-ID vorhanden ist, lade Fotos nach Datum
+      if (date) {
+        const { assets } = await MediaLibrary.getAssetsAsync(options);
+        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+
+        // Filtere manuell nach Datum
+        const filteredAssets = assets.filter((asset) => {
+          const assetDate = new Date(asset.creationTime);
+          return assetDate >= startOfMonth && assetDate <= endOfMonth;
+        });
+
+        if (filteredAssets.length > 0) {
+          setLoadingProgress({ current: 0, total: filteredAssets.length });
+          // Lade die vollständigen Asset-Informationen
+          const loadedAssets = [];
+          for (let i = 0; i < filteredAssets.length; i++) {
             try {
-              const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
-              return {
+              const assetInfo = await MediaLibrary.getAssetInfoAsync(
+                filteredAssets[i]
+              );
+              loadedAssets.push({
                 ...assetInfo,
                 uri: assetInfo.localUri || assetInfo.uri,
-              };
+              });
+              setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
             } catch (error) {
               console.error("Error loading asset info:", error);
-              return asset;
+              loadedAssets.push(filteredAssets[i]);
             }
-          })
-        );
-
-        setMonthPhotos(loadedAssets);
-        setIsMonthComplete(false);
-      } else {
-        console.log("No photos found for month:", {
-          year: date.getFullYear(),
-          month: date.getMonth(),
-        });
-        handleNoPhotos(date);
+          }
+          setMonthPhotos(loadedAssets);
+          setIsMonthComplete(false);
+        } else {
+          console.log("No photos found");
+          handleNoPhotos(date);
+        }
       }
     } catch (error) {
       console.error("Error loading photos:", error);
     } finally {
       setIsLoading(false);
+      setLoadingProgress({ current: 0, total: 0 });
     }
   };
 
-  // Hilfsfunktion für den Fall, dass keine Fotos gefunden wurden
   const handleNoPhotos = async (date: Date) => {
     const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
     setProcessedMonths((prev) => new Set(prev).add(monthKey));
     const prevMonth = new Date(date.getFullYear(), date.getMonth() - 1, 1);
     setCurrentMonth(prevMonth);
-    await loadMonthPhotos(prevMonth);
+    await loadPhotos(prevMonth, null);
+  };
+
+  const getAssetFileSize = async (assetId: string): Promise<number> => {
+    try {
+      const assetInfo = await MediaLibrary.getAssetInfoAsync(assetId);
+      // @ts-ignore - fileSize existiert in der iOS Implementation
+      return assetInfo.fileSize || 0;
+    } catch (error) {
+      console.error("Error getting asset info:", error);
+      return 0;
+    }
   };
 
   const moveToNextPhoto = async (addToDeleteList: boolean = false) => {
@@ -122,41 +241,20 @@ export const usePhotoManager = () => {
 
     if (addToDeleteList) {
       try {
-        // Prüfe ob das Foto bereits in der Liste ist
         const isDuplicate = photosToDelete.some(
           (photo) => photo.id === currentPhoto.id
         );
         if (!isDuplicate) {
-          const assetInfo = await MediaLibrary.getAssetInfoAsync(
-            currentPhoto.id,
-            {
-              shouldDownloadFromNetwork: true,
-            }
+          const estimatedSize = estimatePhotoSize(
+            currentPhoto.width,
+            currentPhoto.height
           );
-
-          // Schätze die Dateigröße basierend auf der Bildgröße
-          let estimatedSize = 0;
-          if (assetInfo.width && assetInfo.height) {
-            // Grobe Schätzung: 3 Byte pro Pixel für JPEG
-            estimatedSize =
-              (assetInfo.width * assetInfo.height * 3) / 1024 / 1024; // in MB
-
-            // Berücksichtige den Bildtyp
-            if (assetInfo.filename?.toLowerCase().endsWith("heic")) {
-              estimatedSize *= 0.5; // HEIC ist effizienter
-            } else if (assetInfo.filename?.toLowerCase().endsWith("png")) {
-              estimatedSize *= 1.5; // PNG ist größer
-            }
-          }
-
-          console.log("Estimated size:", estimatedSize, "MB");
-
           setPhotosToDelete((prev) => [
             ...prev,
             {
               id: currentPhoto.id,
               uri: currentPhoto.uri,
-              fileSize: Math.round(estimatedSize * 1024 * 1024),
+              fileSize: estimatedSize,
             },
           ]);
         }
@@ -191,10 +289,15 @@ export const usePhotoManager = () => {
       );
       setPhotosToDelete([]);
 
-      // Markiere aktuellen Monat als verarbeitet und gehe zum nächsten
-      const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-      setProcessedMonths((prev) => new Set(prev).add(monthKey));
-      await moveToNextMonth();
+      if (currentMonth && !currentAlbumId) {
+        // Nur für Monatsansicht
+        const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
+        setProcessedMonths((prev) => new Set(prev).add(monthKey));
+        await moveToNextMonth();
+      } else if (currentAlbumId) {
+        // Für Albumansicht
+        await loadPhotos(null, currentAlbumId);
+      }
 
       return true;
     } catch (error) {
@@ -208,30 +311,22 @@ export const usePhotoManager = () => {
   };
 
   const calculateTotalSize = (photos: PhotoToDelete[]) => {
-    return photos.reduce((acc, photo) => {
-      console.log("Photo size:", photo.fileSize); // Debug log
-      return acc + (photo.fileSize || 0);
-    }, 0);
+    return photos.reduce((acc, photo) => acc + (photo.fileSize || 0), 0);
   };
 
-  // Hilfsfunktion zum Finden des nächsten älteren Monats mit Fotos
   const findPreviousMonthWithPhotos = useCallback(async (startDate: Date) => {
     try {
-      // Hole das erste Foto VOR dem aktuellen Monat
       const { assets } = await MediaLibrary.getAssetsAsync({
         mediaType: MediaLibrary.MediaType.photo,
         first: 1,
         createdBefore: startDate.getTime(),
         sortBy: MediaLibrary.SortBy.creationTime,
-        // Die Sortierung wird durch die Reihenfolge der Fotos bestimmt
-        // und createdBefore stellt sicher, dass wir ältere Fotos bekommen
       });
 
       if (assets.length === 0) {
         return null;
       }
 
-      // Wenn wir ein Foto finden, bestimme seinen Monat
       const previousPhotoDate = new Date(assets[0].creationTime);
       return new Date(
         previousPhotoDate.getFullYear(),
@@ -265,119 +360,34 @@ export const usePhotoManager = () => {
       return;
     }
 
-    // Wenn der vorherige Monat mit Fotos gefunden wurde
     setCurrentMonth(previousMonthWithPhotos);
-    await loadMonthPhotos(previousMonthWithPhotos);
-  }, [currentMonth, findPreviousMonthWithPhotos, loadMonthPhotos]);
+    await loadPhotos(previousMonthWithPhotos, null);
+  }, [currentMonth, findPreviousMonthWithPhotos]);
 
-  // checkIfLastMonth prüft jetzt, ob es ältere Monate gibt
-  const checkIfLastMonth = useCallback(
-    async (date: Date) => {
-      if (!date) return true;
-
-      const startOfMonth = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        1,
-        0,
-        0,
-        0
-      );
-
-      const previousMonthWithPhotos = await findPreviousMonthWithPhotos(
-        startOfMonth
-      );
-      return previousMonthWithPhotos === null;
-    },
-    [findPreviousMonthWithPhotos]
-  );
-
-  const setInitialMonth = async (year: number, month: number) => {
-    console.log("PhotoManager: setInitialMonth called", { year, month });
+  const setInitialMonth = async (
+    year: number,
+    month: number,
+    albumId?: string
+  ) => {
+    console.log("PhotoManager: setInitialMonth called", {
+      year,
+      month,
+      albumId,
+    });
 
     try {
       setIsLoading(true);
-      const date = new Date(year, month, 1);
-      console.log("PhotoManager: Created date object:", date.toISOString());
-
-      // Set current month before any async operations to ensure it's not null
-      setCurrentMonth(date);
-      const currentMonthDate = date; // Store in local variable to avoid null checks
-
-      const startOfMonth = new Date(year, month, 1);
-      const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
-
-      console.log("PhotoManager: Querying photos between:", {
-        start: startOfMonth.toLocaleString(),
-        end: endOfMonth.toLocaleString(),
-      });
-
-      const { assets } = await MediaLibrary.getAssetsAsync({
-        mediaType: MediaLibrary.MediaType.photo,
-        first: 999999,
-        createdAfter: startOfMonth.getTime(),
-        createdBefore: endOfMonth.getTime(),
-        sortBy: MediaLibrary.SortBy.creationTime,
-      });
-
-      console.log("PhotoManager: Initial query results:", {
-        totalAssets: assets.length,
-        firstAssetDate: assets[0]?.creationTime
-          ? new Date(assets[0].creationTime).toLocaleString()
-          : "none",
-        lastAssetDate: assets[assets.length - 1]?.creationTime
-          ? new Date(assets[assets.length - 1].creationTime).toLocaleString()
-          : "none",
-      });
-
-      if (assets.length > 0) {
-        console.log("PhotoManager: Loading detailed asset info...");
-        const loadedAssets = await Promise.all(
-          assets.map(async (asset) => {
-            try {
-              const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
-              return {
-                ...assetInfo,
-                uri: assetInfo.localUri || assetInfo.uri,
-              };
-            } catch (error) {
-              console.error("PhotoManager: Error loading asset info:", error);
-              return asset;
-            }
-          })
-        );
-
-        console.log("PhotoManager: Setting state with loaded assets:", {
-          count: loadedAssets.length,
-        });
-
-        setMonthPhotos(loadedAssets);
-        setCurrentIndex(0);
-        setIsMonthComplete(false);
+      if (albumId) {
+        // Wenn ein Album ausgewählt wurde, setze den Album-Modus
+        setCurrentAlbumId(albumId);
+        setCurrentMonth(null); // Deaktiviere die Monatsansicht
+        await loadPhotos(null, albumId);
       } else {
-        console.log(
-          "PhotoManager: No photos found, finding previous month with photos"
-        );
-        setMonthPhotos([]);
-        setCurrentIndex(0);
-        setIsMonthComplete(true);
-
-        // Find the previous month with photos using the local date variable
-        const previousMonthWithPhotos = await findPreviousMonthWithPhotos(
-          currentMonthDate
-        );
-
-        if (!previousMonthWithPhotos) {
-          console.log("PhotoManager: No previous months with photos found");
-          setIsLastMonth(true);
-        } else {
-          console.log(
-            "PhotoManager: Found previous month with photos:",
-            previousMonthWithPhotos.toLocaleString()
-          );
-          setCurrentMonth(previousMonthWithPhotos);
-          await loadMonthPhotos(previousMonthWithPhotos);
-        }
+        // Wenn kein Album ausgewählt wurde, setze den Monats-Modus
+        setCurrentAlbumId(null);
+        const date = new Date(year, month, 1);
+        setCurrentMonth(date);
+        await loadPhotos(date, null);
       }
     } catch (error) {
       console.error("PhotoManager: Error in setInitialMonth:", error);
@@ -401,7 +411,7 @@ export const usePhotoManager = () => {
     moveToNextPhoto,
     handleUndo,
     deleteSelectedPhotos,
-    loadMonthPhotos,
+    loadPhotos,
     progress,
     removeFromDeleteList,
     totalSize: calculateTotalSize(photosToDelete),
@@ -409,7 +419,9 @@ export const usePhotoManager = () => {
     currentMonth: currentMonth || new Date(),
     moveToNextMonth,
     isLoading,
+    loadingProgress,
     setInitialMonth,
     isLastMonth,
+    currentAlbumTitle,
   };
 };

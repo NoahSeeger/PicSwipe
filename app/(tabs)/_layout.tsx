@@ -37,6 +37,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="albums"
+        options={{
+          title: "Alben",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol name="rectangle.stack.fill" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: "Einstellungen",

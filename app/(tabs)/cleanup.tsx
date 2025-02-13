@@ -3,6 +3,7 @@ import { View, StyleSheet, Modal, Linking, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/components/ThemeProvider";
+import { useRouter } from "expo-router";
 
 // Hooks
 import { usePhotoPermission } from "@/hooks/usePhotoPermission";
@@ -13,19 +14,22 @@ import { HeaderControls } from "@/components/cleanup/HeaderControls";
 import { SwipeablePhoto } from "@/components/cleanup/SwipeablePhoto";
 import { FullscreenImage } from "@/components/FullscreenImage";
 import { MonthCompleteScreen } from "@/components/cleanup/MonthCompleteScreen";
+import { AlbumCompleteScreen } from "@/components/cleanup/AlbumCompleteScreen";
 import { LoadingScreen } from "@/components/cleanup/LoadingScreen";
 
 export default function CleanupScreen() {
   // Hooks & State
   const { permissionStatus, requestPermission, checkPermissions } =
     usePhotoPermission();
-  const { year, month } = useLocalSearchParams<{
+  const { year, month, albumId } = useLocalSearchParams<{
     year: string;
     month: string;
+    albumId: string;
   }>();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const router = useRouter();
 
   const {
     currentPhoto,
@@ -41,9 +45,10 @@ export default function CleanupScreen() {
     currentMonth,
     moveToNextMonth,
     isLoading,
+    loadingProgress,
     setInitialMonth,
     isLastMonth,
-    loadLatestMonth,
+    currentAlbumTitle,
   } = usePhotoManager();
 
   // Effects
@@ -61,15 +66,17 @@ export default function CleanupScreen() {
     const loadPhotos = async () => {
       if (permissionStatus === "granted") {
         try {
-          if (year && month) {
+          if (albumId) {
+            // Wenn eine Album-ID vorhanden ist, lade die Fotos aus diesem Album
+            await setInitialMonth(0, 0, albumId);
+          } else if (year && month) {
+            // Wenn Jahr und Monat vorhanden sind, lade die Fotos aus diesem Monat
             await setInitialMonth(parseInt(year), parseInt(month));
           } else {
-            // Get the current date
+            // Ansonsten lade den aktuellen Monat
             const now = new Date();
             await setInitialMonth(now.getFullYear(), now.getMonth());
           }
-          // If no photos were found in the initial month, moveToNextMonth will be called automatically
-          // through the handleNoPhotos function in usePhotoManager
         } catch (error) {
           console.error("Error loading photos:", error);
         }
@@ -77,7 +84,7 @@ export default function CleanupScreen() {
     };
 
     loadPhotos();
-  }, [permissionStatus, year, month]);
+  }, [permissionStatus, year, month, albumId]);
 
   // Styles mit Theme-Farben
   const styles = StyleSheet.create({
@@ -142,9 +149,27 @@ export default function CleanupScreen() {
     );
   }
 
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading) return <LoadingScreen progress={loadingProgress} />;
 
   if (isMonthComplete) {
+    if (albumId) {
+      // Wenn ein Album durchgearbeitet wurde
+      return (
+        <AlbumCompleteScreen
+          albumTitle={currentAlbumTitle || "Unbekanntes Album"}
+          photosToDelete={photosToDelete.length}
+          totalSize={photosToDelete.reduce(
+            (acc, photo) => acc + (photo.fileSize || 0),
+            0
+          )}
+          onDelete={deleteSelectedPhotos}
+          onClose={() => router.back()}
+          photos={photosToDelete}
+          onRemovePhoto={removeFromDeleteList}
+        />
+      );
+    }
+    // Wenn ein Monat durchgearbeitet wurde
     return (
       <MonthCompleteScreen
         month={new Intl.DateTimeFormat("de-DE", { month: "long" }).format(

@@ -6,29 +6,25 @@ import { formatBytes } from "@/utils/formatBytes";
 import { PhotoToDelete } from "@/hooks/usePhotoManager";
 import { DeleteButton } from "./DeleteButton";
 
-type MonthCompleteScreenProps = {
-  month: string;
-  year: number;
+type AlbumCompleteScreenProps = {
+  albumTitle: string;
   photosToDelete: number;
   totalSize: number;
   onDelete: () => Promise<boolean>;
-  onContinue: () => void;
+  onClose: () => void;
   photos: PhotoToDelete[];
   onRemovePhoto: (id: string) => void;
-  isLastMonth: boolean;
 };
 
-export function MonthCompleteScreen({
-  month,
-  year,
+export function AlbumCompleteScreen({
+  albumTitle,
   photosToDelete,
   totalSize,
   onDelete,
-  onContinue,
+  onClose,
   photos,
   onRemovePhoto,
-  isLastMonth,
-}: MonthCompleteScreenProps) {
+}: AlbumCompleteScreenProps) {
   const { colors } = useTheme();
 
   return (
@@ -40,10 +36,10 @@ export function MonthCompleteScreen({
           color={colors.primary}
         />
         <Text style={[styles.title, { color: colors.text }]}>
-          Monat durchgearbeitet!
+          Album durchgearbeitet!
         </Text>
         <Text style={[styles.subtitle, { color: colors.secondary }]}>
-          Du hast {month} {year} sortiert
+          Du hast das Album "{albumTitle}" sortiert
         </Text>
 
         <View style={[styles.statsContainer, { backgroundColor: colors.card }]}>
@@ -73,19 +69,17 @@ export function MonthCompleteScreen({
             onRemovePhoto={onRemovePhoto}
             totalSize={totalSize}
           />
-          {!isLastMonth && (
-            <Pressable
-              style={[
-                styles.button,
-                { backgroundColor: colors.card, marginTop: 12 },
-              ]}
-              onPress={onContinue}
-            >
-              <Text style={[styles.buttonText, { color: colors.text }]}>
-                Weiter zum nächsten Monat
-              </Text>
-            </Pressable>
-          )}
+          <Pressable
+            style={[
+              styles.button,
+              { backgroundColor: colors.card, marginTop: 12 },
+            ]}
+            onPress={onClose}
+          >
+            <Text style={[styles.buttonText, { color: colors.text }]}>
+              Zurück zur Übersicht
+            </Text>
+          </Pressable>
         </View>
       </View>
     </View>

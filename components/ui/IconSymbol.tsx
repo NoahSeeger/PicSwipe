@@ -14,6 +14,7 @@ const iconMapping: { [key: string]: keyof typeof Ionicons.glyphMap } = {
   // Navigation & Tabs
   "house.fill": "home",
   "photo.fill": "images",
+  "rectangle.stack.fill": "albums",
   gear: "settings",
 
   // Arrows & Navigation
