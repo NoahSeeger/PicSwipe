@@ -11,6 +11,8 @@ export const colors = {
     secondary: "#666666",
     card: "#F2F2F7",
     border: "#E5E5EA",
+    tabBar: "#FFFFFF",
+    shadow: "#000000",
   },
   dark: {
     primary: "#0A84FF",
@@ -19,6 +21,8 @@ export const colors = {
     secondary: "#EBEBF5",
     card: "#1C1C1E",
     border: "#38383A",
+    tabBar: "#121214",
+    shadow: "#AFAFAF",
   },
 } as const;
 

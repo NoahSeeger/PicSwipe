@@ -97,7 +97,8 @@ export const usePhotoManager = () => {
 
   const loadPhotos = async (
     date: Date | null = currentMonth,
-    albumId: string | null = currentAlbumId
+    albumId: string | null = currentAlbumId,
+    eagerLoadCount?: number
   ) => {
     try {
       console.log("Loading photos with params:", { date, albumId });
@@ -135,25 +136,71 @@ export const usePhotoManager = () => {
 
           if (assets.length > 0) {
             setLoadingProgress({ current: 0, total: assets.length });
-            // Lade die vollständigen Asset-Informationen
-            const loadedAssets = [];
-            for (let i = 0; i < assets.length; i++) {
-              try {
-                const assetInfo = await MediaLibrary.getAssetInfoAsync(
-                  assets[i]
-                );
-                loadedAssets.push({
-                  ...assetInfo,
-                  uri: assetInfo.localUri || assetInfo.uri,
-                });
-                setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
-              } catch (error) {
-                console.error("Error loading asset info:", error);
-                loadedAssets.push(assets[i]);
+            // Eager loading: nur eagerLoadCount Bilder zuerst laden, Rest asynchron nachladen
+            if (eagerLoadCount && eagerLoadCount < assets.length) {
+              // Zuerst nur die ersten eagerLoadCount Assets laden
+              const eagerAssets = [];
+              for (let i = 0; i < eagerLoadCount; i++) {
+                try {
+                  const assetInfo = await MediaLibrary.getAssetInfoAsync(
+                    assets[i]
+                  );
+                  eagerAssets.push({
+                    ...assetInfo,
+                    uri: assetInfo.localUri || assetInfo.uri,
+                  });
+                  setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
+                } catch (error) {
+                  console.error("Error loading asset info:", error);
+                  eagerAssets.push(assets[i]);
+                }
               }
+              setMonthPhotos(eagerAssets);
+              setIsMonthComplete(false);
+              // Restliche Bilder im Hintergrund laden und anhängen
+              (async () => {
+                const rest = [];
+                for (let i = eagerLoadCount; i < assets.length; i++) {
+                  try {
+                    const assetInfo = await MediaLibrary.getAssetInfoAsync(
+                      assets[i]
+                    );
+                    rest.push({
+                      ...assetInfo,
+                      uri: assetInfo.localUri || assetInfo.uri,
+                    });
+                  } catch (error) {
+                    console.error("Error loading asset info:", error);
+                    rest.push(assets[i]);
+                  }
+                  setLoadingProgress((prev) => ({
+                    ...prev,
+                    current: Math.min(prev.current + 1, assets.length),
+                  }));
+                }
+                setMonthPhotos((prev) => [...prev, ...rest]);
+              })();
+            } else {
+              // Lade die vollständigen Asset-Informationen (wie bisher)
+              const loadedAssets = [];
+              for (let i = 0; i < assets.length; i++) {
+                try {
+                  const assetInfo = await MediaLibrary.getAssetInfoAsync(
+                    assets[i]
+                  );
+                  loadedAssets.push({
+                    ...assetInfo,
+                    uri: assetInfo.localUri || assetInfo.uri,
+                  });
+                  setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
+                } catch (error) {
+                  console.error("Error loading asset info:", error);
+                  loadedAssets.push(assets[i]);
+                }
+              }
+              setMonthPhotos(loadedAssets);
+              setIsMonthComplete(false);
             }
-            setMonthPhotos(loadedAssets);
-            setIsMonthComplete(false);
           }
           return;
         } catch (error) {
@@ -178,25 +225,70 @@ export const usePhotoManager = () => {
 
         if (filteredAssets.length > 0) {
           setLoadingProgress({ current: 0, total: filteredAssets.length });
-          // Lade die vollständigen Asset-Informationen
-          const loadedAssets = [];
-          for (let i = 0; i < filteredAssets.length; i++) {
-            try {
-              const assetInfo = await MediaLibrary.getAssetInfoAsync(
-                filteredAssets[i]
-              );
-              loadedAssets.push({
-                ...assetInfo,
-                uri: assetInfo.localUri || assetInfo.uri,
-              });
-              setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
-            } catch (error) {
-              console.error("Error loading asset info:", error);
-              loadedAssets.push(filteredAssets[i]);
+          if (eagerLoadCount && eagerLoadCount < filteredAssets.length) {
+            // Eager loading: nur eagerLoadCount Bilder zuerst laden, Rest asynchron nachladen
+            const eagerAssets = [];
+            for (let i = 0; i < eagerLoadCount; i++) {
+              try {
+                const assetInfo = await MediaLibrary.getAssetInfoAsync(
+                  filteredAssets[i]
+                );
+                eagerAssets.push({
+                  ...assetInfo,
+                  uri: assetInfo.localUri || assetInfo.uri,
+                });
+                setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
+              } catch (error) {
+                console.error("Error loading asset info:", error);
+                eagerAssets.push(filteredAssets[i]);
+              }
             }
+            setMonthPhotos(eagerAssets);
+            setIsMonthComplete(false);
+            // Restliche Bilder im Hintergrund laden und anhängen
+            (async () => {
+              const rest = [];
+              for (let i = eagerLoadCount; i < filteredAssets.length; i++) {
+                try {
+                  const assetInfo = await MediaLibrary.getAssetInfoAsync(
+                    filteredAssets[i]
+                  );
+                  rest.push({
+                    ...assetInfo,
+                    uri: assetInfo.localUri || assetInfo.uri,
+                  });
+                } catch (error) {
+                  console.error("Error loading asset info:", error);
+                  rest.push(filteredAssets[i]);
+                }
+                setLoadingProgress((prev) => ({
+                  ...prev,
+                  current: Math.min(prev.current + 1, filteredAssets.length),
+                }));
+              }
+              setMonthPhotos((prev) => [...prev, ...rest]);
+            })();
+          } else {
+            // Lade die vollständigen Asset-Informationen (wie bisher)
+            const loadedAssets = [];
+            for (let i = 0; i < filteredAssets.length; i++) {
+              try {
+                const assetInfo = await MediaLibrary.getAssetInfoAsync(
+                  filteredAssets[i]
+                );
+                loadedAssets.push({
+                  ...assetInfo,
+                  uri: assetInfo.localUri || assetInfo.uri,
+                });
+                setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
+              } catch (error) {
+                console.error("Error loading asset info:", error);
+                loadedAssets.push(filteredAssets[i]);
+              }
+            }
+            setMonthPhotos(loadedAssets);
+            setIsMonthComplete(false);
           }
-          setMonthPhotos(loadedAssets);
-          setIsMonthComplete(false);
         } else {
           console.log("No photos found");
           handleNoPhotos(date);
@@ -367,12 +459,14 @@ export const usePhotoManager = () => {
   const setInitialMonth = async (
     year: number,
     month: number,
-    albumId?: string
+    albumId?: string,
+    eagerLoadCount?: number
   ) => {
     console.log("PhotoManager: setInitialMonth called", {
       year,
       month,
       albumId,
+      eagerLoadCount,
     });
 
     try {
@@ -381,13 +475,13 @@ export const usePhotoManager = () => {
         // Wenn ein Album ausgewählt wurde, setze den Album-Modus
         setCurrentAlbumId(albumId);
         setCurrentMonth(null); // Deaktiviere die Monatsansicht
-        await loadPhotos(null, albumId);
+        await loadPhotos(null, albumId, eagerLoadCount);
       } else {
         // Wenn kein Album ausgewählt wurde, setze den Monats-Modus
         setCurrentAlbumId(null);
         const date = new Date(year, month, 1);
         setCurrentMonth(date);
-        await loadPhotos(date, null);
+        await loadPhotos(date, null, eagerLoadCount);
       }
     } catch (error) {
       console.error("PhotoManager: Error in setInitialMonth:", error);

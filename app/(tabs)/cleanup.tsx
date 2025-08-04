@@ -66,16 +66,27 @@ export default function CleanupScreen() {
     const loadPhotos = async () => {
       if (permissionStatus === "granted") {
         try {
+          // Lade zunächst nur eine kleine Menge an Bildern, Rest wird im Hintergrund nachgeladen
           if (albumId) {
             // Wenn eine Album-ID vorhanden ist, lade die Fotos aus diesem Album
-            await setInitialMonth(0, 0, albumId);
+            await setInitialMonth(0, 0, albumId, 5);
           } else if (year && month) {
             // Wenn Jahr und Monat vorhanden sind, lade die Fotos aus diesem Monat
-            await setInitialMonth(parseInt(year), parseInt(month));
+            await setInitialMonth(
+              parseInt(year),
+              parseInt(month),
+              undefined,
+              5
+            );
           } else {
             // Ansonsten lade den aktuellen Monat
             const now = new Date();
-            await setInitialMonth(now.getFullYear(), now.getMonth());
+            await setInitialMonth(
+              now.getFullYear(),
+              now.getMonth(),
+              undefined,
+              5
+            );
           }
         } catch (error) {
           console.error("Error loading photos:", error);

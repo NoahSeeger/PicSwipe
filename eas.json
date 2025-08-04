@@ -34,10 +34,6 @@
     "preview4": {
       "distribution": "internal"
     },
-    "production": {
-      "cache": {
-        "disabled": true
-      }
-    }
+    "production": {}
   }
 }
