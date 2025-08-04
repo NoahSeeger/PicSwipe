@@ -35,14 +35,8 @@
       "distribution": "internal"
     },
     "production": {
-      "distribution": "store",
-      "ios": {
-        "image": "latest",
-        "node": "18.x",
-        "resourceClass": "m-medium",
-        "cache": {
-          "key": "picswipe-ios-5"
-        }
+      "cache": {
+        "disabled": true
       }
     }
   }
