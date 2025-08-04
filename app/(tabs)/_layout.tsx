@@ -21,18 +21,18 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "Fotos",
           tabBarIcon: ({ color }) => (
-            <IconSymbol name="house.fill" size={24} color={color} />
+            <IconSymbol name="photo.fill" size={24} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="cleanup"
         options={{
-          title: "Cleanup",
+          title: "Bereinigung",
           tabBarIcon: ({ color }) => (
-            <IconSymbol name="photo.fill" size={24} color={color} />
+            <IconSymbol name="paintbrush.fill" size={24} color={color} />
           ),
         }}
       />
