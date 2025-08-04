@@ -5,13 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "userInterfaceStyle": "automatic",
     "scheme": "picswipe",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#121214"
-    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
@@ -24,12 +18,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.PicSwipe",
+      "package": "com.noahseeger.picswipe",
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "MEDIA_LIBRARY"
+        "WRITE_EXTERNAL_STORAGE"
       ],
       "userInterfaceStyle": "automatic"
     },
@@ -46,7 +39,13 @@
         {
           "image": "./assets/images/splash.png",
           "resizeMode": "contain",
-          "backgroundColor": "#000000"
+          "backgroundColor": "#121214"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Erlaube Picswipe, auf deine Fotos zuzugreifen, um deine Galerie aufzuräumen."
         }
       ]
     ],
