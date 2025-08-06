@@ -1,12 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { usePhotoPermission } from "@/hooks/usePhotoPermission";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/components/ThemeProvider";
 
 export default function SettingsScreen() {
-  const { permissionStatus, requestPermission } = usePhotoPermission();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
@@ -69,17 +67,6 @@ export default function SettingsScreen() {
         <View style={styles.devOptions}>
           <Text style={styles.button} onPress={resetOnboarding}>
             Onboarding zurücksetzen
-          </Text>
-          <Text
-            style={[
-              styles.button,
-              permissionStatus === "granted" && styles.buttonDisabled,
-            ]}
-            onPress={requestPermission}
-          >
-            {permissionStatus === "granted"
-              ? "Foto-Zugriff aktiv"
-              : "Foto-Zugriff anfordern"}
           </Text>
         </View>
       </View>

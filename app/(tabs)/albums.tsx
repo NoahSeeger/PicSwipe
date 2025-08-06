@@ -11,7 +11,6 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as MediaLibrary from "expo-media-library";
 import { useTheme } from "@/components/ThemeProvider";
-import { usePhotoPermission } from "@/hooks/usePhotoPermission";
 
 type Album = MediaLibrary.Album & {
   thumbnail?: string;
@@ -23,18 +22,8 @@ export default function AlbumsScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const router = useRouter();
-  const { permissionStatus, requestPermission } = usePhotoPermission();
-
-  useEffect(() => {
-    loadAlbums();
-  }, [permissionStatus]);
 
   const loadAlbums = async () => {
-    if (permissionStatus !== "granted") {
-      await requestPermission();
-      return;
-    }
-
     try {
       setIsLoading(true);
       // Hole alle benutzerdefinierten Alben
@@ -138,15 +127,9 @@ export default function AlbumsScreen() {
     </Pressable>
   );
 
-  if (permissionStatus === "denied") {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Text style={[styles.message, { color: colors.text }]}>
-          Bitte erlaube den Zugriff auf deine Fotos in den Einstellungen.
-        </Text>
-      </View>
-    );
-  }
+  useEffect(() => {
+    loadAlbums();
+  }, []);
 
   return (
     <View

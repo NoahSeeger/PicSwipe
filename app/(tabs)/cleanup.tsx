@@ -7,7 +7,6 @@ import { useTheme } from "@/components/ThemeProvider";
 import { useRouter } from "expo-router";
 
 // Hooks
-import { usePhotoPermission } from "@/hooks/usePhotoPermission";
 import { usePhotoManager } from "@/hooks/usePhotoManager";
 import { useSwipeLimit } from "@/hooks/useSwipeLimit";
 
@@ -21,8 +20,6 @@ import { LoadingScreen } from "@/components/cleanup/LoadingScreen";
 
 export default function CleanupScreen() {
   // Hooks & State
-  const { permissionStatus, requestPermission, checkPermissions } =
-    usePhotoPermission();
   const { year, month, albumId } = useLocalSearchParams<{
     year: string;
     month: string;
@@ -79,50 +76,37 @@ export default function CleanupScreen() {
     }
   };
 
-  // Effects
-  useEffect(() => {
-    checkPermissions();
-  }, []);
-
-  useEffect(() => {
-    if (permissionStatus === "undetermined") {
-      requestPermission();
-    }
-  }, [permissionStatus]);
-
   useEffect(() => {
     const loadPhotos = async () => {
-      if (permissionStatus === "granted") {
-        try {
-          // Optimierte Eager Loading-Konfiguration
-          const eagerLoadCount = 5; // Lade 5 Bilder initial
+      try {
+        // Optimierte Eager Loading-Konfiguration
+        const eagerLoadCount = 5; // Lade 5 Bilder initial
 
-          if (albumId) {
-            await setInitialMonth(0, 0, albumId, eagerLoadCount);
-          } else if (year && month) {
-            await setInitialMonth(
-              parseInt(year),
-              parseInt(month),
-              undefined,
-              eagerLoadCount
-            );
-          } else {
-            const now = new Date();
-            await setInitialMonth(
-              now.getFullYear(),
-              now.getMonth(),
-              undefined,
-              eagerLoadCount
-            );
-          }
-        } catch (error) {
-          console.error("Error loading photos:", error);
+        if (albumId) {
+          await setInitialMonth(0, 0, albumId, eagerLoadCount);
+        } else if (year && month) {
+          await setInitialMonth(
+            parseInt(year),
+            parseInt(month),
+            undefined,
+            eagerLoadCount
+          );
+        } else {
+          const now = new Date();
+          await setInitialMonth(
+            now.getFullYear(),
+            now.getMonth(),
+            undefined,
+            eagerLoadCount
+          );
         }
+      } catch (error) {
+        console.error("Error loading photos:", error);
       }
     };
 
     loadPhotos();
-  }, [permissionStatus, year, month, albumId]);
+  }, [year, month, albumId]);
 
   // Styles mit Theme-Farben
   const styles = StyleSheet.create({
@@ -199,37 +183,7 @@ export default function CleanupScreen() {
     }
   };
 
-  // Conditional Renders
-  if (permissionStatus === "denied") {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.messageContainer}>
-          <Text style={styles.message}>
-            Um deine Fotos zu verwalten, benötigen wir Zugriff auf deine
-            Galerie. Bitte erlaube den Zugriff in den Einstellungen.
-          </Text>
-          <Text style={styles.button} onPress={() => Linking.openSettings()}>
-            Einstellungen öffnen
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (permissionStatus === "undetermined") {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.messageContainer}>
-          <Text style={styles.message}>
-            Um deine Fotos zu verwalten, benötigen wir Zugriff auf deine Galerie
-          </Text>
-          <Text style={styles.button} onPress={requestPermission}>
-            Foto-Zugriff erlauben
-          </Text>
-        </View>
-      </View>
-    );
-  }
+  console.log("isLoading", isLoading);
 
   // Zeige LoadingScreen nur wenn initial geladen wird oder eager loading noch nicht fertig
   if (

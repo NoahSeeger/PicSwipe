@@ -244,26 +244,12 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
         )}
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { marginTop: 50 }]}
           onPress={handleButtonPress}
           activeOpacity={0.8}
         >
           <Text style={styles.buttonText}>{getButtonText()}</Text>
         </TouchableOpacity>
-
-        {permissionStatus === "undetermined" && (
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => {
-              /* Optional: Mehr Infos */
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.secondaryButtonText}>
-              Warum wird das benötigt?
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
     </View>
   );
