@@ -126,7 +126,7 @@ export function DeletePreviewModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -145,30 +145,63 @@ export function DeletePreviewModal({
           </Pressable>
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.gridContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {photos.map((photo) => (
-            <View key={photo.id} style={styles.photoContainer}>
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={() => onRemovePhoto(photo.id)}
-              >
-                <IconSymbol
-                  name="minus.circle.fill"
-                  size={24}
-                  color="#FF3B30"
+        <View style={{ flex: 1, justifyContent: "space-between" }}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.gridContainer,
+              { paddingBottom: 24 },
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            {photos.map((photo) => (
+              <View key={photo.id} style={styles.photoContainer}>
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => onRemovePhoto(photo.id)}
+                >
+                  <IconSymbol
+                    name="minus.circle.fill"
+                    size={24}
+                    color="#FF3B30"
+                  />
+                </TouchableOpacity>
+                <Image
+                  source={{ uri: photo.uri }}
+                  style={styles.thumbnail}
+                  resizeMode="cover"
                 />
-              </TouchableOpacity>
-              <Image
-                source={{ uri: photo.uri }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-              />
-            </View>
-          ))}
-        </ScrollView>
+              </View>
+            ))}
+          </ScrollView>
+
+          <View
+            style={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 12 }}
+          >
+            <Pressable
+              onPress={handlePressDelete}
+              onLongPress={handleLongPressDelete}
+              style={{
+                height: 50,
+                borderRadius: 12,
+                backgroundColor: colors.primary,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: 17,
+                  textAlign: "center",
+                  letterSpacing: 0.5,
+                }}
+              >
+                Alle Fotos löschen
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
     </Modal>
   );

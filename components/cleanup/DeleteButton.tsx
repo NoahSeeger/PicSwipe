@@ -117,15 +117,16 @@ export function DeleteButton({
           </Text>
         </Animated.View>
         {isLongPressing && (
-          <Animated.View
-            style={[
-              styles.progressBar,
-              {
-                backgroundColor: colors.primary,
-                width: progressWidth,
-              },
-            ]}
-          />
+          <View style={styles.progressBarBackground}>
+            <Animated.View
+              style={[
+                styles.progressBarForeground,
+                {
+                  width: progressWidth,
+                },
+              ]}
+            />
+          </View>
         )}
       </Pressable>
 
@@ -168,11 +169,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.8,
   },
-  progressBar: {
+  progressBarBackground: {
     position: "absolute",
     bottom: 0,
     left: 0,
-    height: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    width: "100%",
+    height: 6,
+    backgroundColor: "rgba(255,255,255,0.3)",
+  },
+
+  progressBarForeground: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    height: 100,
+    backgroundColor: "rgba(255 255 255 / 0.56)",
+    zIndex: 1,
   },
 });

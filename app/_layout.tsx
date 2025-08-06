@@ -6,7 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import { StatusBar } from "expo-status-bar";
 import { Appearance } from "react-native";
 import { PermissionGuard } from "@/components/PermissionGuard";
@@ -15,7 +15,7 @@ import { PhotoPermissionProvider } from "@/components/PhotoPermissionProvider";
 export default function RootLayout() {
   const router = useRouter();
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
-
+  const { colors } = useTheme();
   useEffect(() => {
     const checkFirstLaunch = async () => {
       try {
@@ -23,7 +23,7 @@ export default function RootLayout() {
         if (value === null) {
           await AsyncStorage.setItem("hasLaunched", "true");
           setIsFirstLaunch(true);
-          router.replace("/onboarding");
+          //router.replace("/onboarding"); //disable onboarding for now
         } else {
           setIsFirstLaunch(false);
         }
@@ -59,13 +59,19 @@ export default function RootLayout() {
               <Stack
                 screenOptions={{
                   headerShown: false,
-                  animation: "fade",
-                  animationDuration: 200,
+                  animation: "slide_from_bottom",
+                  animationDuration: 250,
                   presentation: "card",
+                  contentStyle: {
+                    backgroundColor:
+                      Appearance.getColorScheme() === "dark"
+                        ? "black"
+                        : "white",
+                  },
                 }}
               >
                 <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="year" />
+                <Stack.Screen name="[year]" />
                 <Stack.Screen
                   name="onboarding"
                   options={{

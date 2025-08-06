@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Purchases from "react-native-purchases";
 
-const SWIPE_LIMIT = 100;
+const SWIPE_LIMIT = 1000;
 
 export const useSwipeLimit = () => {
   const [swipes, setSwipes] = useState(0);

@@ -35,8 +35,8 @@ export default function HomeScreen() {
 
   const handleYearPress = (year: number) => {
     router.push({
-      pathname: "/year/[year]",
-      params: { year },
+      pathname: "/[year]",
+      params: { year: year.toString() },
     });
   };
 
