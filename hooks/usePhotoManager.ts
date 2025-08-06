@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Platform } from "react-native";
 import * as MediaLibrary from "expo-media-library";
+import * as FileSystem from "expo-file-system";
 
 export type PhotoToDelete = {
   id: string;
@@ -15,6 +16,14 @@ type AssetInfo = MediaLibrary.Asset & {
 type EnhancedAsset = MediaLibrary.Asset & {
   uri: string;
   fileSize: number;
+  isLoaded: boolean;
+};
+
+type LoadingState = {
+  phase: "initial" | "eager" | "background" | "complete";
+  current: number;
+  total: number;
+  eagerCount: number;
 };
 
 const getAssetInfo = async (
@@ -28,20 +37,44 @@ const getAssetInfo = async (
       if (!info.localUri) {
         throw new Error("No localUri available for iOS asset");
       }
+
+      let fileSize = 0;
+      // Versuche echte Dateigröße zu ermitteln
+      try {
+        if (info.localUri.startsWith("file://")) {
+          const fileInfo = await FileSystem.getInfoAsync(info.localUri);
+          if (fileInfo.exists && "size" in fileInfo) {
+            fileSize = fileInfo.size;
+          }
+        }
+      } catch (sizeError) {
+        console.warn("Could not get file size:", sizeError);
+        // Fallback auf Schätzung
+        fileSize = estimatePhotoSize(asset.width, asset.height);
+      }
+
       return {
         ...asset,
         uri: info.localUri,
-        // @ts-ignore - fileSize existiert in der iOS Implementation
-        fileSize: info.fileSize || 0,
+        fileSize,
+        isLoaded: true,
       };
     }
 
     // Für Android: Verwende die normale uri
+    let fileSize = 0;
+    try {
+      // @ts-ignore - fileSize existiert manchmal in der Android Implementation
+      fileSize = info.fileSize || estimatePhotoSize(asset.width, asset.height);
+    } catch {
+      fileSize = estimatePhotoSize(asset.width, asset.height);
+    }
+
     return {
       ...asset,
       uri: asset.uri,
-      // @ts-ignore - fileSize existiert in der iOS Implementation
-      fileSize: info.fileSize || 0,
+      fileSize,
+      isLoaded: true,
     };
   } catch (error) {
     console.error("Error getting asset info:", error, {
@@ -53,25 +86,62 @@ const getAssetInfo = async (
     return {
       ...asset,
       uri: asset.uri,
-      fileSize: 0,
+      fileSize: estimatePhotoSize(asset.width, asset.height),
+      isLoaded: false,
     };
   }
 };
 
-// Durchschnittliche Bytes pro Pixel für ein JPEG-Bild (typische Kompression)
-const BYTES_PER_PIXEL = 0.3; // Reduziert von 4 auf 0.3 für realistischere JPEG-Größen
-
+// Verbesserte Größenschätzung basierend auf typischen JPEG-Kompressionsraten
 const estimatePhotoSize = (width: number, height: number): number => {
-  // Berechne die Anzahl der Pixel
   const pixels = width * height;
 
-  // Schätze die Dateigröße basierend auf der typischen JPEG-Kompression
-  const estimatedSize = pixels * BYTES_PER_PIXEL;
+  // Verschiedene Qualitätsstufen basierend auf Auflösung
+  let bytesPerPixel = 0.3;
 
-  // Füge einen minimalen Overhead hinzu (JPEG-Header etc.)
-  const minSize = 10 * 1024; // Minimale Größe von 10KB
+  if (pixels > 12000000) {
+    // > 12MP (z.B. moderne Smartphones)
+    bytesPerPixel = 0.4;
+  } else if (pixels > 8000000) {
+    // > 8MP
+    bytesPerPixel = 0.35;
+  } else if (pixels < 2000000) {
+    // < 2MP (ältere Bilder)
+    bytesPerPixel = 0.25;
+  }
+
+  const estimatedSize = pixels * bytesPerPixel;
+  const minSize = 50 * 1024; // Minimale Größe von 50KB
 
   return Math.max(estimatedSize, minSize);
+};
+
+// Hilfsfunktion für Batch-Processing
+const processBatch = async <T, R>(
+  items: T[],
+  batchSize: number,
+  processor: (item: T) => Promise<R>,
+  onProgress?: (processed: number, total: number) => void
+): Promise<R[]> => {
+  const results: R[] = [];
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(batch.map(processor));
+
+    batchResults.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        results.push(result.value);
+      } else {
+        console.error(`Error processing item ${i + index}:`, result.reason);
+        // Füge Fallback-Wert hinzu falls nötig
+      }
+    });
+
+    onProgress?.(Math.min(i + batchSize, items.length), items.length);
+  }
+
+  return results;
 };
 
 export const usePhotoManager = () => {
@@ -80,15 +150,19 @@ export const usePhotoManager = () => {
   const [currentAlbumTitle, setCurrentAlbumTitle] = useState<string | null>(
     null
   );
-  const [monthPhotos, setMonthPhotos] = useState<AssetInfo[]>([]);
+  const [monthPhotos, setMonthPhotos] = useState<EnhancedAsset[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [photosToDelete, setPhotosToDelete] = useState<PhotoToDelete[]>([]);
-  const [previousPhoto, setPreviousPhoto] = useState<AssetInfo | null>(null);
+  const [previousPhoto, setPreviousPhoto] = useState<EnhancedAsset | null>(
+    null
+  );
   const [isMonthComplete, setIsMonthComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState({
+  const [loadingState, setLoadingState] = useState<LoadingState>({
+    phase: "initial",
     current: 0,
     total: 0,
+    eagerCount: 0,
   });
   const [processedMonths, setProcessedMonths] = useState<Set<string>>(
     new Set()
@@ -98,12 +172,21 @@ export const usePhotoManager = () => {
   const loadPhotos = async (
     date: Date | null = currentMonth,
     albumId: string | null = currentAlbumId,
-    eagerLoadCount?: number
+    eagerLoadCount: number = 5
   ) => {
     try {
-      console.log("Loading photos with params:", { date, albumId });
+      console.log("Loading photos with params:", {
+        date,
+        albumId,
+        eagerLoadCount,
+      });
       setIsLoading(true);
-      setLoadingProgress({ current: 0, total: 0 });
+      setLoadingState({
+        phase: "initial",
+        current: 0,
+        total: 0,
+        eagerCount: eagerLoadCount,
+      });
       setMonthPhotos([]);
       setCurrentIndex(0);
       setPhotosToDelete([]);
@@ -114,191 +197,146 @@ export const usePhotoManager = () => {
         sortBy: MediaLibrary.SortBy.creationTime,
       };
 
-      // Wenn eine Album-ID vorhanden ist, lade nur Fotos aus diesem Album
+      let rawAssets: MediaLibrary.Asset[] = [];
+
+      // Lade rohe Assets basierend auf Album oder Datum
       if (albumId) {
         console.log("Loading photos from album:", albumId);
-        try {
-          // Hole zuerst alle Alben
-          const albums = await MediaLibrary.getAlbumsAsync();
-          const album = albums.find((a) => a.id === albumId);
+        const albums = await MediaLibrary.getAlbumsAsync();
+        const album = albums.find((a) => a.id === albumId);
 
-          if (!album) {
-            console.error("Album not found:", albumId);
-            return;
-          }
-
-          setCurrentAlbumTitle(album.title);
-
-          const { assets } = await MediaLibrary.getAssetsAsync({
-            ...options,
-            album: album,
-          });
-
-          if (assets.length > 0) {
-            setLoadingProgress({ current: 0, total: assets.length });
-            // Eager loading: nur eagerLoadCount Bilder zuerst laden, Rest asynchron nachladen
-            if (eagerLoadCount && eagerLoadCount < assets.length) {
-              // Zuerst nur die ersten eagerLoadCount Assets laden
-              const eagerAssets = [];
-              for (let i = 0; i < eagerLoadCount; i++) {
-                try {
-                  const assetInfo = await MediaLibrary.getAssetInfoAsync(
-                    assets[i]
-                  );
-                  eagerAssets.push({
-                    ...assetInfo,
-                    uri: assetInfo.localUri || assetInfo.uri,
-                  });
-                  setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
-                } catch (error) {
-                  console.error("Error loading asset info:", error);
-                  eagerAssets.push(assets[i]);
-                }
-              }
-              setMonthPhotos(eagerAssets);
-              setIsMonthComplete(false);
-              // Restliche Bilder im Hintergrund laden und anhängen
-              (async () => {
-                const rest = [];
-                for (let i = eagerLoadCount; i < assets.length; i++) {
-                  try {
-                    const assetInfo = await MediaLibrary.getAssetInfoAsync(
-                      assets[i]
-                    );
-                    rest.push({
-                      ...assetInfo,
-                      uri: assetInfo.localUri || assetInfo.uri,
-                    });
-                  } catch (error) {
-                    console.error("Error loading asset info:", error);
-                    rest.push(assets[i]);
-                  }
-                  setLoadingProgress((prev) => ({
-                    ...prev,
-                    current: Math.min(prev.current + 1, assets.length),
-                  }));
-                }
-                setMonthPhotos((prev) => [...prev, ...rest]);
-              })();
-            } else {
-              // Lade die vollständigen Asset-Informationen (wie bisher)
-              const loadedAssets = [];
-              for (let i = 0; i < assets.length; i++) {
-                try {
-                  const assetInfo = await MediaLibrary.getAssetInfoAsync(
-                    assets[i]
-                  );
-                  loadedAssets.push({
-                    ...assetInfo,
-                    uri: assetInfo.localUri || assetInfo.uri,
-                  });
-                  setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
-                } catch (error) {
-                  console.error("Error loading asset info:", error);
-                  loadedAssets.push(assets[i]);
-                }
-              }
-              setMonthPhotos(loadedAssets);
-              setIsMonthComplete(false);
-            }
-          }
-          return;
-        } catch (error) {
-          console.error("Error loading album:", error);
+        if (!album) {
+          console.error("Album not found:", albumId);
           return;
         }
-      }
 
-      // Wenn keine Album-ID vorhanden ist, lade Fotos nach Datum
-      if (date) {
+        setCurrentAlbumTitle(album.title);
+        const { assets } = await MediaLibrary.getAssetsAsync({
+          ...options,
+          album: album,
+        });
+        rawAssets = assets;
+      } else if (date) {
         const { assets } = await MediaLibrary.getAssetsAsync(options);
         const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
         startOfMonth.setHours(0, 0, 0, 0);
         const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         endOfMonth.setHours(23, 59, 59, 999);
 
-        // Filtere manuell nach Datum
-        const filteredAssets = assets.filter((asset) => {
+        rawAssets = assets.filter((asset) => {
           const assetDate = new Date(asset.creationTime);
           return assetDate >= startOfMonth && assetDate <= endOfMonth;
         });
+      }
 
-        if (filteredAssets.length > 0) {
-          setLoadingProgress({ current: 0, total: filteredAssets.length });
-          if (eagerLoadCount && eagerLoadCount < filteredAssets.length) {
-            // Eager loading: nur eagerLoadCount Bilder zuerst laden, Rest asynchron nachladen
-            const eagerAssets = [];
-            for (let i = 0; i < eagerLoadCount; i++) {
-              try {
-                const assetInfo = await MediaLibrary.getAssetInfoAsync(
-                  filteredAssets[i]
-                );
-                eagerAssets.push({
-                  ...assetInfo,
-                  uri: assetInfo.localUri || assetInfo.uri,
-                });
-                setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
-              } catch (error) {
-                console.error("Error loading asset info:", error);
-                eagerAssets.push(filteredAssets[i]);
-              }
-            }
-            setMonthPhotos(eagerAssets);
-            setIsMonthComplete(false);
-            // Restliche Bilder im Hintergrund laden und anhängen
-            (async () => {
-              const rest = [];
-              for (let i = eagerLoadCount; i < filteredAssets.length; i++) {
-                try {
-                  const assetInfo = await MediaLibrary.getAssetInfoAsync(
-                    filteredAssets[i]
-                  );
-                  rest.push({
-                    ...assetInfo,
-                    uri: assetInfo.localUri || assetInfo.uri,
-                  });
-                } catch (error) {
-                  console.error("Error loading asset info:", error);
-                  rest.push(filteredAssets[i]);
-                }
-                setLoadingProgress((prev) => ({
-                  ...prev,
-                  current: Math.min(prev.current + 1, filteredAssets.length),
-                }));
-              }
-              setMonthPhotos((prev) => [...prev, ...rest]);
-            })();
-          } else {
-            // Lade die vollständigen Asset-Informationen (wie bisher)
-            const loadedAssets = [];
-            for (let i = 0; i < filteredAssets.length; i++) {
-              try {
-                const assetInfo = await MediaLibrary.getAssetInfoAsync(
-                  filteredAssets[i]
-                );
-                loadedAssets.push({
-                  ...assetInfo,
-                  uri: assetInfo.localUri || assetInfo.uri,
-                });
-                setLoadingProgress((prev) => ({ ...prev, current: i + 1 }));
-              } catch (error) {
-                console.error("Error loading asset info:", error);
-                loadedAssets.push(filteredAssets[i]);
-              }
-            }
-            setMonthPhotos(loadedAssets);
-            setIsMonthComplete(false);
-          }
-        } else {
-          console.log("No photos found");
+      if (rawAssets.length === 0) {
+        console.log("No photos found");
+        if (date && !albumId) {
           handleNoPhotos(date);
         }
+        return;
       }
+
+      // Setze sofort die Gesamtanzahl
+      setLoadingState((prev) => ({
+        ...prev,
+        total: rawAssets.length,
+        phase: "eager",
+      }));
+
+      // Erstelle Platzhalter-Assets mit minimalen Daten
+      const placeholderAssets: EnhancedAsset[] = rawAssets.map((asset) => ({
+        ...asset,
+        uri: asset.uri,
+        fileSize: estimatePhotoSize(asset.width, asset.height),
+        isLoaded: false,
+      }));
+
+      setMonthPhotos(placeholderAssets);
+
+      // Lade die ersten paar Bilder mit vollständigen Infos (Eager Loading)
+      const eagerAssets = rawAssets.slice(0, eagerLoadCount);
+      const loadedEagerAssets = await processBatch(
+        eagerAssets,
+        2, // Kleine Batch-Größe für bessere Responsivität
+        getAssetInfo,
+        (current) => {
+          setLoadingState((prev) => ({
+            ...prev,
+            current,
+            phase: "eager",
+          }));
+        }
+      );
+
+      // Ersetze die Platzhalter mit den vollständig geladenen Assets
+      setMonthPhotos((prev) => {
+        const updated = [...prev];
+        loadedEagerAssets.forEach((loadedAsset, index) => {
+          if (updated[index]) {
+            updated[index] = loadedAsset;
+          }
+        });
+        return updated;
+      });
+
+      setLoadingState((prev) => ({
+        ...prev,
+        phase: "background",
+        current: eagerLoadCount,
+      }));
+
+      // Lade die restlichen Bilder im Hintergrund
+      if (rawAssets.length > eagerLoadCount) {
+        const remainingAssets = rawAssets.slice(eagerLoadCount);
+
+        // Verwende setTimeout um den UI-Thread nicht zu blockieren
+        setTimeout(async () => {
+          const loadedRemainingAssets = await processBatch(
+            remainingAssets,
+            5, // Größere Batch-Größe für Hintergrund-Loading
+            getAssetInfo,
+            (current) => {
+              setLoadingState((prev) => ({
+                ...prev,
+                current: eagerLoadCount + current,
+                phase:
+                  prev.current + current >= prev.total
+                    ? "complete"
+                    : "background",
+              }));
+            }
+          );
+
+          // Ersetze die restlichen Platzhalter
+          setMonthPhotos((prev) => {
+            const updated = [...prev];
+            loadedRemainingAssets.forEach((loadedAsset, index) => {
+              const actualIndex = eagerLoadCount + index;
+              if (updated[actualIndex]) {
+                updated[actualIndex] = loadedAsset;
+              }
+            });
+            return updated;
+          });
+
+          setLoadingState((prev) => ({
+            ...prev,
+            phase: "complete",
+          }));
+        }, 100);
+      } else {
+        setLoadingState((prev) => ({
+          ...prev,
+          phase: "complete",
+        }));
+      }
+
+      setIsMonthComplete(false);
     } catch (error) {
       console.error("Error loading photos:", error);
     } finally {
       setIsLoading(false);
-      setLoadingProgress({ current: 0, total: 0 });
     }
   };
 
@@ -310,14 +348,34 @@ export const usePhotoManager = () => {
     await loadPhotos(prevMonth, null);
   };
 
-  const getAssetFileSize = async (assetId: string): Promise<number> => {
+  // Optimierte Funktion für echte Dateigrößen
+  const getActualFileSize = async (asset: EnhancedAsset): Promise<number> => {
+    if (
+      asset.isLoaded &&
+      asset.fileSize &&
+      asset.fileSize > estimatePhotoSize(asset.width, asset.height) * 0.8
+    ) {
+      return asset.fileSize; // Verwende bereits geladene, realistische Größe
+    }
+
     try {
-      const assetInfo = await MediaLibrary.getAssetInfoAsync(assetId);
-      // @ts-ignore - fileSize existiert in der iOS Implementation
-      return assetInfo.fileSize || 0;
+      if (Platform.OS === "ios" && asset.uri.startsWith("file://")) {
+        const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+        if (fileInfo.exists && "size" in fileInfo) {
+          return fileInfo.size;
+        }
+      }
+
+      const assetInfo = await MediaLibrary.getAssetInfoAsync(asset.id);
+      // @ts-ignore
+      return (
+        assetInfo.fileSize ||
+        asset.fileSize ||
+        estimatePhotoSize(asset.width, asset.height)
+      );
     } catch (error) {
-      console.error("Error getting asset info:", error);
-      return 0;
+      console.error("Error getting actual file size:", error);
+      return asset.fileSize || estimatePhotoSize(asset.width, asset.height);
     }
   };
 
@@ -337,21 +395,18 @@ export const usePhotoManager = () => {
           (photo) => photo.id === currentPhoto.id
         );
         if (!isDuplicate) {
-          const estimatedSize = estimatePhotoSize(
-            currentPhoto.width,
-            currentPhoto.height
-          );
+          const actualSize = await getActualFileSize(currentPhoto);
           setPhotosToDelete((prev) => [
             ...prev,
             {
               id: currentPhoto.id,
               uri: currentPhoto.uri,
-              fileSize: estimatedSize,
+              fileSize: actualSize,
             },
           ]);
         }
       } catch (error) {
-        console.error("Error getting asset info:", error);
+        console.error("Error adding photo to delete list:", error);
       }
     }
 
@@ -382,12 +437,10 @@ export const usePhotoManager = () => {
       setPhotosToDelete([]);
 
       if (currentMonth && !currentAlbumId) {
-        // Nur für Monatsansicht
         const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
         setProcessedMonths((prev) => new Set(prev).add(monthKey));
         await moveToNextMonth();
       } else if (currentAlbumId) {
-        // Für Albumansicht
         await loadPhotos(null, currentAlbumId);
       }
 
@@ -460,7 +513,7 @@ export const usePhotoManager = () => {
     year: number,
     month: number,
     albumId?: string,
-    eagerLoadCount?: number
+    eagerLoadCount: number = 5
   ) => {
     console.log("PhotoManager: setInitialMonth called", {
       year,
@@ -472,12 +525,10 @@ export const usePhotoManager = () => {
     try {
       setIsLoading(true);
       if (albumId) {
-        // Wenn ein Album ausgewählt wurde, setze den Album-Modus
         setCurrentAlbumId(albumId);
-        setCurrentMonth(null); // Deaktiviere die Monatsansicht
+        setCurrentMonth(null);
         await loadPhotos(null, albumId, eagerLoadCount);
       } else {
-        // Wenn kein Album ausgewählt wurde, setze den Monats-Modus
         setCurrentAlbumId(null);
         const date = new Date(year, month, 1);
         setCurrentMonth(date);
@@ -513,7 +564,7 @@ export const usePhotoManager = () => {
     currentMonth: currentMonth || new Date(),
     moveToNextMonth,
     isLoading,
-    loadingProgress,
+    loadingProgress: loadingState, // Neuer verbesserter Loading State
     setInitialMonth,
     isLastMonth,
     currentAlbumTitle,

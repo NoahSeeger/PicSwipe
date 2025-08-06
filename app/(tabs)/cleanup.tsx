@@ -47,10 +47,8 @@ export default function CleanupScreen() {
     currentMonth,
     moveToNextMonth,
     isLoading,
-    loadingProgress,
+    loadingProgress, // Jetzt mit verbesserter Struktur
     setInitialMonth,
-    setMonthPhotosTotal,
-    setLoadingProgress,
     isLastMonth,
     currentAlbumTitle,
   } = usePhotoManager();
@@ -96,47 +94,26 @@ export default function CleanupScreen() {
     const loadPhotos = async () => {
       if (permissionStatus === "granted") {
         try {
-          // Lade zunächst nur eine kleine Menge an Bildern, Rest wird im Hintergrund nachgeladen
+          // Optimierte Eager Loading-Konfiguration
+          const eagerLoadCount = 5; // Lade 5 Bilder initial
+
           if (albumId) {
-            // Wenn eine Album-ID vorhanden ist, lade die Fotos aus diesem Album
-            const eagerLoadCount = 3;
-            const filteredAssets = await setInitialMonth(
-              0,
-              0,
-              albumId,
-              eagerLoadCount
-            );
-            if (filteredAssets && filteredAssets.length) {
-              setMonthPhotosTotal(filteredAssets.length);
-              setLoadingProgress({ current: 0, total: filteredAssets.length });
-            }
+            await setInitialMonth(0, 0, albumId, eagerLoadCount);
           } else if (year && month) {
-            // Wenn Jahr und Monat vorhanden sind, lade die Fotos aus diesem Monat
-            const eagerLoadCount = 3;
-            const assets = await setInitialMonth(
+            await setInitialMonth(
               parseInt(year),
               parseInt(month),
               undefined,
               eagerLoadCount
             );
-            if (assets && assets.length) {
-              setMonthPhotosTotal(assets.length);
-              setLoadingProgress({ current: 0, total: assets.length });
-            }
           } else {
-            // Ansonsten lade den aktuellen Monat
             const now = new Date();
-            const eagerLoadCount = 3;
-            const assets = await setInitialMonth(
+            await setInitialMonth(
               now.getFullYear(),
               now.getMonth(),
               undefined,
               eagerLoadCount
             );
-            if (assets && assets.length) {
-              setMonthPhotosTotal(assets.length);
-              setLoadingProgress({ current: 0, total: assets.length });
-            }
           }
         } catch (error) {
           console.error("Error loading photos:", error);
@@ -178,6 +155,50 @@ export default function CleanupScreen() {
     },
   });
 
+  // Hilfsfunktion für LoadingScreen Props
+  const getLoadingScreenProps = () => {
+    switch (loadingProgress.phase) {
+      case "initial":
+        return {
+          progress: { current: 0, total: Math.max(loadingProgress.total, 1) },
+          message: "Suche Fotos...",
+        };
+      case "eager":
+        return {
+          progress: {
+            current: loadingProgress.current,
+            total: Math.min(loadingProgress.eagerCount, loadingProgress.total),
+          },
+          message: `Lade erste ${Math.min(
+            loadingProgress.eagerCount,
+            loadingProgress.total
+          )} Fotos...`,
+        };
+      case "background":
+        return {
+          progress: {
+            current: loadingProgress.eagerCount,
+            total: loadingProgress.eagerCount,
+          },
+          message:
+            "Bereit zum Sortieren! Weitere Fotos werden im Hintergrund geladen...",
+        };
+      case "complete":
+        return {
+          progress: {
+            current: loadingProgress.total,
+            total: loadingProgress.total,
+          },
+          message: "Alle Fotos geladen!",
+        };
+      default:
+        return {
+          progress: { current: 0, total: 1 },
+          message: "Lade...",
+        };
+    }
+  };
+
   // Conditional Renders
   if (permissionStatus === "denied") {
     return (
@@ -210,7 +231,20 @@ export default function CleanupScreen() {
     );
   }
 
-  if (isLoading) return <LoadingScreen progress={loadingProgress} />;
+  // Zeige LoadingScreen nur wenn initial geladen wird oder eager loading noch nicht fertig
+  if (
+    isLoading ||
+    (loadingProgress.phase === "eager" &&
+      loadingProgress.current < loadingProgress.eagerCount)
+  ) {
+    const loadingProps = getLoadingScreenProps();
+    return (
+      <LoadingScreen
+        progress={loadingProps.progress}
+        message={loadingProps.message}
+      />
+    );
+  }
 
   if (isMonthComplete) {
     if (albumId) {
@@ -291,7 +325,35 @@ export default function CleanupScreen() {
           </Modal>
         </View>
       ) : (
-        <Text style={styles.message}>Keine weiteren Fotos in diesem Monat</Text>
+        <Text style={styles.message}>
+          Keine weiteren Fotos in diesem {albumId ? "Album" : "Monat"}
+        </Text>
+      )}
+
+      {/* Hintergrund-Loading-Indikator */}
+      {loadingProgress.phase === "background" && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 100,
+            alignSelf: "center",
+            backgroundColor: colors.background,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+            opacity: 0.8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              color: colors.text,
+            }}
+          >
+            Lade weitere Fotos... ({loadingProgress.current}/
+            {loadingProgress.total})
+          </Text>
+        </View>
       )}
     </View>
   );
