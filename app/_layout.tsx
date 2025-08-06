@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -27,6 +29,15 @@ export default function RootLayout() {
         console.error("Error checking first launch:", error);
       }
     };
+
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+    if (Platform.OS === "ios") {
+      Purchases.configure({ apiKey: "appl_AfqyHTRArOyTHiRDAvgWKmWqTWM" });
+    } else if (Platform.OS === "android") {
+      Purchases.configure({ apiKey: "appl_AfqyHTRArOyTHiRDAvgWKmWqTWM" });
+      // Optional: falls du Amazon Support aktivieren willst
+      // Purchases.configure({ apiKey: "<revenuecat_project_amazon_api_key>", useAmazon: true });
+    }
 
     checkFirstLaunch();
   }, []);

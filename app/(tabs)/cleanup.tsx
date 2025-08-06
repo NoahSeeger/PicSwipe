@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Modal, Linking, Text } from "react-native";
+import { RevenueCatUI, PAYWALL_RESULT } from "react-native-purchases-ui";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/components/ThemeProvider";
@@ -8,6 +9,7 @@ import { useRouter } from "expo-router";
 // Hooks
 import { usePhotoPermission } from "@/hooks/usePhotoPermission";
 import { usePhotoManager } from "@/hooks/usePhotoManager";
+import { useSwipeLimit } from "@/hooks/useSwipeLimit";
 
 // Components
 import { HeaderControls } from "@/components/cleanup/HeaderControls";
@@ -47,9 +49,37 @@ export default function CleanupScreen() {
     isLoading,
     loadingProgress,
     setInitialMonth,
+    setMonthPhotosTotal,
+    setLoadingProgress,
     isLastMonth,
     currentAlbumTitle,
   } = usePhotoManager();
+
+  const { swipes, incrementSwipe, hasReachedLimit, isPro } = useSwipeLimit();
+
+  // Handle swipe with paywall logic
+  const handleSwipeWithPaywall = async (direction: "left" | "right") => {
+    if (hasReachedLimit) {
+      try {
+        const result = await RevenueCatUI.presentPaywallIfNeeded({
+          requiredEntitlementIdentifier: "pro",
+        });
+        if (
+          result === PAYWALL_RESULT.PURCHASED ||
+          result === PAYWALL_RESULT.RESTORED
+        ) {
+          incrementSwipe();
+          moveToNextPhoto(direction === "left");
+        }
+        // else: do nothing
+      } catch (e) {
+        // do nothing or optionally log error
+      }
+    } else {
+      incrementSwipe();
+      moveToNextPhoto(direction === "left");
+    }
+  };
 
   // Effects
   useEffect(() => {
@@ -69,24 +99,44 @@ export default function CleanupScreen() {
           // Lade zunächst nur eine kleine Menge an Bildern, Rest wird im Hintergrund nachgeladen
           if (albumId) {
             // Wenn eine Album-ID vorhanden ist, lade die Fotos aus diesem Album
-            await setInitialMonth(0, 0, albumId, 5);
+            const eagerLoadCount = 3;
+            const filteredAssets = await setInitialMonth(
+              0,
+              0,
+              albumId,
+              eagerLoadCount
+            );
+            if (filteredAssets && filteredAssets.length) {
+              setMonthPhotosTotal(filteredAssets.length);
+              setLoadingProgress({ current: 0, total: filteredAssets.length });
+            }
           } else if (year && month) {
             // Wenn Jahr und Monat vorhanden sind, lade die Fotos aus diesem Monat
-            await setInitialMonth(
+            const eagerLoadCount = 3;
+            const assets = await setInitialMonth(
               parseInt(year),
               parseInt(month),
               undefined,
-              5
+              eagerLoadCount
             );
+            if (assets && assets.length) {
+              setMonthPhotosTotal(assets.length);
+              setLoadingProgress({ current: 0, total: assets.length });
+            }
           } else {
             // Ansonsten lade den aktuellen Monat
             const now = new Date();
-            await setInitialMonth(
+            const eagerLoadCount = 3;
+            const assets = await setInitialMonth(
               now.getFullYear(),
               now.getMonth(),
               undefined,
-              5
+              eagerLoadCount
             );
+            if (assets && assets.length) {
+              setMonthPhotosTotal(assets.length);
+              setLoadingProgress({ current: 0, total: assets.length });
+            }
           }
         } catch (error) {
           console.error("Error loading photos:", error);
@@ -224,7 +274,7 @@ export default function CleanupScreen() {
           <SwipeablePhoto
             uri={currentPhoto.uri}
             nextPhotos={nextPhotos.map((p) => p.uri)}
-            onSwipe={(direction) => moveToNextPhoto(direction === "left")}
+            onSwipe={handleSwipeWithPaywall}
             onPress={() => setIsFullscreen(true)}
           />
 
