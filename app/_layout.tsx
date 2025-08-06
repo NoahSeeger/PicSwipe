@@ -9,6 +9,8 @@ import { useRouter } from "expo-router";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { StatusBar } from "expo-status-bar";
 import { Appearance } from "react-native";
+import { PermissionGuard } from "@/components/PermissionGuard";
+import { PhotoPermissionProvider } from "@/components/PhotoPermissionProvider";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -49,24 +51,31 @@ export default function RootLayout() {
       />
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: "fade",
-              animationDuration: 200,
-              presentation: "card",
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="year" />
-            <Stack.Screen
-              name="onboarding"
-              options={{
-                gestureEnabled: false,
-                animation: "fade",
-              }}
-            />
-          </Stack>
+          <PhotoPermissionProvider>
+            <PermissionGuard
+              customMessage="Damit du deine Fotos sortieren und organisieren kannst, benötigt PicSwipe Zugriff auf deine Galerie."
+              customButtonText="Fotos-Zugriff erlauben"
+            >
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: "fade",
+                  animationDuration: 200,
+                  presentation: "card",
+                }}
+              >
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="year" />
+                <Stack.Screen
+                  name="onboarding"
+                  options={{
+                    gestureEnabled: false,
+                    animation: "fade",
+                  }}
+                />
+              </Stack>
+            </PermissionGuard>
+          </PhotoPermissionProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </ThemeProvider>
