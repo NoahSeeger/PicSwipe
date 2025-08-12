@@ -7,15 +7,15 @@ import React, {
 } from "react";
 import * as MediaLibrary from "expo-media-library";
 import { Platform, Alert, Linking } from "react-native";
-
-type PermissionStatus = MediaLibrary.PermissionStatus;
+// We normalize permission status to string literals to avoid SDK type mismatches
+type PhotoPermissionStatus = "undetermined" | "granted" | "denied" | "limited";
 
 type PermissionContextType = {
-  permissionStatus: PermissionStatus | null;
+  permissionStatus: PhotoPermissionStatus | null;
   isLoading: boolean;
   hasPermission: boolean;
   requestPermission: () => Promise<boolean>;
-  checkPermissions: () => Promise<PermissionStatus>;
+  checkPermissions: () => Promise<PhotoPermissionStatus>;
   showSettingsAlert: () => void;
   canRequestPermission: boolean;
 };
@@ -32,28 +32,42 @@ export const PhotoPermissionProvider: React.FC<
   PhotoPermissionProviderProps
 > = ({ children }) => {
   const [permissionStatus, setPermissionStatus] =
-    useState<PermissionStatus | null>(null);
+    useState<PhotoPermissionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasRequestedOnce, setHasRequestedOnce] = useState(false);
 
-  const checkPermissions = useCallback(async (): Promise<PermissionStatus> => {
-    try {
-      console.log("🔍 Checking photo permissions...");
-      setIsLoading(true);
-
-      const { status } = await MediaLibrary.getPermissionsAsync();
-      console.log("📱 Current permission status:", status);
-
-      setPermissionStatus(status);
+  const normalizeStatus = (status: unknown): PhotoPermissionStatus => {
+    if (
+      status === "granted" ||
+      status === "denied" ||
+      status === "undetermined" ||
+      status === "limited"
+    ) {
       return status;
-    } catch (error) {
-      console.error("❌ Error checking permissions:", error);
-      setPermissionStatus("denied");
-      return "denied";
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+    return "denied";
+  };
+
+  const checkPermissions =
+    useCallback(async (): Promise<PhotoPermissionStatus> => {
+      try {
+        console.log("🔍 Checking photo permissions...");
+        setIsLoading(true);
+
+        const { status } = await MediaLibrary.getPermissionsAsync();
+        console.log("📱 Current permission status:", status);
+
+        const normalized = normalizeStatus(status as unknown);
+        setPermissionStatus(normalized);
+        return normalized;
+      } catch (error) {
+        console.error("❌ Error checking permissions:", error);
+        setPermissionStatus("denied");
+        return "denied";
+      } finally {
+        setIsLoading(false);
+      }
+    }, []);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
@@ -64,17 +78,13 @@ export const PhotoPermissionProvider: React.FC<
       const { status } = await MediaLibrary.requestPermissionsAsync();
       console.log("📝 New permission status:", status);
 
-      setPermissionStatus(status);
+      const normalized = normalizeStatus(status as unknown);
+      setPermissionStatus(normalized);
 
-      // Auf iOS, wenn der User "Don't Allow" wählt, wird der Status 'denied'
-      // Nach dem ersten Deny kann man nicht mehr programmatisch fragen
-      if (status === "denied" && Platform.OS === "ios") {
-        setTimeout(() => {
-          showSettingsAlert();
-        }, 500);
-      }
+      // Wir zeigen keinen automatischen Alert mehr an, wenn die Berechtigung abgelehnt wird
+      // Der Nutzer kann selbst über den Button in der PermissionGuard zu den Einstellungen navigieren
 
-      return status === "granted";
+      return normalized === "granted" || normalized === "limited";
     } catch (error) {
       console.error("❌ Error requesting permissions:", error);
       setPermissionStatus("denied");
@@ -86,8 +96,8 @@ export const PhotoPermissionProvider: React.FC<
 
   const showSettingsAlert = useCallback(() => {
     Alert.alert(
-      "Foto-Zugriff erforderlich",
-      "PicSwipe benötigt Zugriff auf deine Fotos, um funktionieren zu können. Bitte erlaube den Zugriff in den Einstellungen.",
+      "Zugriff auf Fotos",
+      "Du kannst den Zugriff in den Einstellungen aktivieren, um alle Galerie-Funktionen zu nutzen.",
       [
         {
           text: "Abbrechen",
@@ -109,7 +119,8 @@ export const PhotoPermissionProvider: React.FC<
   const contextValue: PermissionContextType = {
     permissionStatus,
     isLoading,
-    hasPermission: permissionStatus === "granted",
+    hasPermission:
+      permissionStatus === "granted" || permissionStatus === "limited",
     requestPermission,
     checkPermissions,
     showSettingsAlert,

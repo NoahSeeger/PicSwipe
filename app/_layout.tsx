@@ -52,10 +52,7 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <PhotoPermissionProvider>
-            <PermissionGuard
-              customMessage="Damit du deine Fotos sortieren und organisieren kannst, benötigt PicSwipe Zugriff auf deine Galerie."
-              customButtonText="Fotos-Zugriff erlauben"
-            >
+            <PermissionGuard customButtonText="Weiter">
               <Stack
                 screenOptions={{
                   headerShown: false,

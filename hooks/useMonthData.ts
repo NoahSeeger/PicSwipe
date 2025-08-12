@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import * as MediaLibrary from "expo-media-library";
+import type { PermissionStatus } from "expo-media-library";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const CACHE_KEY = "month_overview_cache";
@@ -27,8 +28,15 @@ export const useMonthData = () => {
     try {
       setIsLoading(true);
 
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") return;
+      const { status } = await MediaLibrary.getPermissionsAsync();
+      // Support für SDKs ohne "limited": akzeptiere "granted" oder eine evtl. vorhandene "limited"-Konstante
+      if (
+        status !== "granted" &&
+        (status as unknown as PermissionStatus) !==
+          ("limited" as unknown as PermissionStatus)
+      ) {
+        return;
+      }
 
       let allAssets: MediaLibrary.Asset[] = [];
       let hasNextPage = true;

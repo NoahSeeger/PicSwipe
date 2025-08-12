@@ -15,15 +15,8 @@ export const useOnboarding = () => {
   }, []);
 
   const requestMediaPermission = async () => {
-    const { status, canAskAgain } = await MediaLibrary.getPermissionsAsync();
-
-    if (status === "undetermined") {
-      const { status: newStatus } =
-        await MediaLibrary.requestPermissionsAsync();
-      setMediaPermission(newStatus);
-      return newStatus;
-    }
-
+    // Nur Status abfragen; tatsächliche Anforderung erfolgt über PermissionGuard
+    const { status } = await MediaLibrary.getPermissionsAsync();
     setMediaPermission(status);
     return status;
   };

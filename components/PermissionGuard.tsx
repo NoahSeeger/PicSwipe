@@ -168,11 +168,11 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
 
     switch (permissionStatus) {
       case "undetermined":
-        return "Damit du PicSwipe nutzen kannst, benötigen wir Zugriff auf deine Fotos. So können wir dir helfen, deine Galerie zu organisieren und Speicherplatz zu sparen.";
+        return "PicSwipe verwendet den Zugriff auf deine Fotos, um Galerie-Funktionen bereitzustellen (z. B. Organisieren und Speicherplatz sparen). Du entscheidest, ob du fortfahren möchtest. Du kannst dies jederzeit in den Einstellungen ändern.";
       case "denied":
-        return "PicSwipe benötigt Zugriff auf deine Fotos, um funktionieren zu können. Bitte erlaube den Zugriff in den Einstellungen.";
+        return "Der Zugriff auf Fotos wurde deaktiviert. Um PicSwipe vollständig nutzen zu können, kannst du die Berechtigung in den iOS-Einstellungen aktivieren. Verwende dazu den Button unten, um zu den Einstellungen zu gelangen.";
       default:
-        return "Um fortzufahren, wird Zugriff auf deine Fotos benötigt.";
+        return "Einige Funktionen benötigen Zugriff auf deine Fotos.";
     }
   };
 
@@ -182,7 +182,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     if (permissionStatus === "denied" && !canRequestPermission) {
       return "Einstellungen öffnen";
     }
-    return "Foto-Zugriff erlauben";
+    return "Weiter";
   };
 
   const handleButtonPress = async () => {
@@ -203,7 +203,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
         <Text style={styles.title}>
           {permissionStatus === "undetermined"
             ? "Willkommen bei PicSwipe!"
-            : "Zugriff erforderlich"}
+            : "Fotos-Zugriff"}
         </Text>
 
         <Text style={styles.message}>{getMessage()}</Text>

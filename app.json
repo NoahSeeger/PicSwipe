@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.noahseeger.picswipe",
-      "buildNumber": "2",
+      "buildNumber": "5",
       "userInterfaceStyle": "automatic",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -50,7 +50,7 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Erlaube Picswipe, auf deine Fotos zuzugreifen, um deine Galerie aufzuräumen."
+          "photosPermission": "PicSwipe verwendet den Zugriff auf deine Fotos, um Galerie-Funktionen bereitzustellen (z. B. Organisieren und Speicherplatz sparen)."
         }
       ]
     ],

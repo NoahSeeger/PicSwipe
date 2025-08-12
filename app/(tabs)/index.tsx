@@ -1,18 +1,17 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   StyleSheet,
   ScrollView,
   View,
   ActivityIndicator,
   RefreshControl,
-  StatusBar,
   Text,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { useMonthData } from "@/hooks/useMonthData";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearListItem } from "@/components/home/YearListItem";
 import { router } from "expo-router";
-import * as MediaLibrary from "expo-media-library";
 import { useTheme } from "@/components/ThemeProvider";
 
 export default function HomeScreen() {
@@ -21,17 +20,7 @@ export default function HomeScreen() {
   const totalPhotos = yearData.reduce((sum, year) => sum + year.totalPhotos, 0);
   const { colors, isDark } = useTheme();
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status === "granted") {
-        const media = await MediaLibrary.getAssetsAsync({
-          mediaType: ["photo"],
-          first: 20,
-        });
-      }
-    })();
-  }, []);
+  // Permissions werden zentral über PermissionGuard gehandhabt
 
   const handleYearPress = (year: number) => {
     router.push({
@@ -118,7 +107,7 @@ export default function HomeScreen() {
               <YearListItem
                 key={year.year}
                 year={year.year}
-                months={year.months}
+                months={year.months.map((m) => ({ month: m.monthIndex + 1 }))}
                 totalPhotos={year.totalPhotos}
                 onPress={() => handleYearPress(year.year)}
               />

@@ -101,8 +101,9 @@ export function HeaderControls({
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 6,
-      borderWidth: 2.5,
-      borderColor: "#FF3B30",
+      borderWidth: 1.5,
+      borderColor: colors.text,
+      backgroundColor: "red",
       shadowColor: "#000",
       shadowOffset: {
         width: 0,
