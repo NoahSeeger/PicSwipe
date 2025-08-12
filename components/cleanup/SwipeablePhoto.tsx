@@ -171,8 +171,11 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
     container: {
       width: size.width,
       height: size.height,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+  // overflow entfernt, damit Bild nicht abgeschnitten wird
+  backgroundColor: "transparent",
+  // borderRadius entfernt, damit Bild nicht abgeschnitten wird
     },
     photoWrapper: {
       width: size.width,
@@ -182,7 +185,7 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
       width: size.width,
       height: size.height,
       borderRadius: 12,
-      backgroundColor: "white",
+      backgroundColor: "transparent", // kein weißer Hintergrund mehr
       shadowColor: "#000",
       shadowOffset: {
         width: 0,
