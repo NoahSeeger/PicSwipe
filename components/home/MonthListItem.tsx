@@ -1,6 +1,6 @@
 import React from "react";
-import { StyleSheet, View, Pressable, Text } from "react-native";
-import { IconSymbol } from "../ui/IconSymbol";
+import { StyleSheet, View, Pressable, Text, Image } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 import { router } from "expo-router";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -10,6 +10,7 @@ type Props = {
   photoCount: number;
   isProcessed: boolean;
   monthIndex: number;
+  thumbnailUri?: string;
 };
 
 export function MonthListItem({
@@ -18,29 +19,31 @@ export function MonthListItem({
   photoCount,
   isProcessed,
   monthIndex,
+  thumbnailUri,
 }: Props) {
   const { colors } = useTheme();
 
   const styles = StyleSheet.create({
     container: {
       flexDirection: "row",
+      padding: 12,
+      borderRadius: 12,
       alignItems: "center",
-      justifyContent: "space-between",
-      padding: 16,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
+      backgroundColor: colors.card,
+      marginBottom: 0, // FlatList gap regelt Abstand
     },
-    pressed: {
-      opacity: 0.7,
-      backgroundColor: colors.pressed,
+    thumbnail: {
+      width: 60,
+      height: 60,
+      borderRadius: 8,
+      backgroundColor: colors.border,
     },
-    leftContent: {
+    textContainer: {
+      marginLeft: 12,
       flex: 1,
+      justifyContent: 'center',
     },
-    rightContent: {
-      marginLeft: 16,
-    },
-    monthYear: {
+    month: {
       fontSize: 17,
       fontWeight: "600",
       marginBottom: 4,
@@ -49,6 +52,9 @@ export function MonthListItem({
     stats: {
       fontSize: 15,
       color: colors.secondary,
+    },
+    chevron: {
+      marginLeft: 8,
     },
   });
 
@@ -61,25 +67,30 @@ export function MonthListItem({
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.container, pressed && { opacity: 0.7 }]}
       onPress={handlePress}
+      accessibilityRole="button"
     >
-      <View style={styles.leftContent}>
-        <Text style={styles.monthYear}>
+      {thumbnailUri ? (
+        <Image source={{ uri: thumbnailUri }} style={styles.thumbnail} />
+      ) : (
+        <View style={styles.thumbnail} />
+      )}
+      <View style={styles.textContainer}>
+        <Text style={styles.month} numberOfLines={1}>
           {month} {year}
         </Text>
-        <Text style={styles.stats}>
-          {photoCount} Foto{photoCount !== 1 ? "s" : ""}
+        <Text style={styles.stats} numberOfLines={1}>
+          {photoCount.toLocaleString()} Fotos
         </Text>
       </View>
-
-      <View style={styles.rightContent}>
-        {isProcessed ? (
-          <IconSymbol name="checkmark.circle.fill" size={24} color="#34C759" />
-        ) : (
-          <IconSymbol name="chevron.right" size={24} color={colors.primary} />
-        )}
-      </View>
+      <Ionicons
+        name="chevron-forward"
+        size={24}
+        color={colors.secondary}
+        style={styles.chevron}
+        accessibilityLabel="Details anzeigen"
+      />
     </Pressable>
   );
 }

@@ -100,56 +100,72 @@ export const useMonthData = () => {
         }
       >();
 
+      // --- RANDOM THUMBNAIL CACHING FÜR JAHRE UND MONATE ---
+      const YEAR_THUMB_CACHE_KEY = 'year_thumbnails_cache_v2';
+        const MONTH_THUMB_CACHE_KEY = ''; // Monats-Thumbnails werden nicht mehr geladen
+        let cachedYearThumbnails: Record<string, { assetId: string; uri: string }> = {};
+        try {
+          const cacheRaw = await AsyncStorage.getItem(YEAR_THUMB_CACHE_KEY);
+          if (cacheRaw) cachedYearThumbnails = JSON.parse(cacheRaw);
+        } catch {}
+
+      // Sammle alle Asset-IDs pro Jahr und pro Monat
+      const yearAssetIds = new Map<number, string[]>();
       allAssets.forEach((asset) => {
-        const date = new Date(asset.creationTime);
-        // Prüfe auf ungültige Daten
-        if (isNaN(date.getTime())) {
-          console.warn("Invalid date for asset:", {
-            id: asset.id,
-            creationTime: asset.creationTime,
-            filename: asset.filename,
-          });
-          return;
-        }
-
-        const year = date.getFullYear();
-        // Log sehr alte oder sehr neue Fotos
-        if (year < 2020 || year > 2025) {
-          console.log("Photo outside expected range:", {
-            id: asset.id,
-            date: date.toLocaleDateString(),
-            year,
-            filename: asset.filename,
-          });
-        }
-
-        const month = date.getMonth();
-
-        if (!yearMap.has(year)) {
-          yearMap.set(year, { months: new Map() });
-        }
+        const dateObj = new Date(asset.creationTime);
+        if (isNaN(dateObj.getTime())) return;
+        const year = dateObj.getFullYear();
+        const month = dateObj.getMonth();
+        if (!yearAssetIds.has(year)) yearAssetIds.set(year, []);
+        yearAssetIds.get(year)!.push(asset.id);
+        if (!yearMap.has(year)) yearMap.set(year, { months: new Map() });
         const yearData = yearMap.get(year)!;
-
-        if (!yearData.months.has(month)) {
-          yearData.months.set(month, { count: 0 });
-        }
+        if (!yearData.months.has(month)) yearData.months.set(month, { count: 0 });
         yearData.months.get(month)!.count++;
       });
 
-      // Sortiere Jahre und Monate
+      // Wähle für jedes Jahr ein zufälliges Asset als Thumbnail (cached, wenn möglich)
+      const yearThumbnails = new Map<number, string>();
+      const newYearCache: Record<string, { assetId: string; uri: string }> = {};
+      for (const [year, assetIds] of yearAssetIds.entries()) {
+        let chosenAssetId = '';
+        if (cachedYearThumbnails[year] && assetIds.includes(cachedYearThumbnails[year].assetId)) {
+          chosenAssetId = cachedYearThumbnails[year].assetId;
+        } else if (assetIds.length > 0) {
+          chosenAssetId = assetIds[Math.floor(Math.random() * assetIds.length)];
+        }
+        if (chosenAssetId) {
+          try {
+            const assetInfo = await MediaLibrary.getAssetInfoAsync(chosenAssetId);
+            const uri = assetInfo.localUri || assetInfo.uri;
+            yearThumbnails.set(year, uri);
+            newYearCache[year] = { assetId: chosenAssetId, uri };
+          } catch {}
+        }
+      }
+      // Wähle für jeden Monat ein zufälliges Asset als Thumbnail (cached, wenn möglich)
+      const monthThumbnails = new Map<string, string>();
+        // Cache aktualisieren für Jahr-Thumbnails
+        try {
+          await AsyncStorage.setItem(YEAR_THUMB_CACHE_KEY, JSON.stringify(newYearCache));
+        } catch {}
       const sortedYears = Array.from(yearMap.entries())
         .sort(([yearA], [yearB]) => yearB - yearA)
         .map(([year, data]) => {
           const months = Array.from(data.months.entries())
             .sort(([monthA], [monthB]) => monthB - monthA)
-            .map(([monthIndex, monthData]) => ({
-              month: new Intl.DateTimeFormat("de-DE", {
-                month: "long",
-              }).format(new Date(year, monthIndex)),
-              monthIndex,
-              photoCount: monthData.count,
-              isProcessed: false,
-            }));
+            .map(([monthIndex, monthData]) => {
+              const monthKey = `${year}-${monthIndex}`;
+              return {
+                month: new Intl.DateTimeFormat("de-DE", {
+                  month: "long",
+                }).format(new Date(year, monthIndex)),
+                monthIndex,
+                photoCount: monthData.count,
+                isProcessed: false,
+                thumbnailUri: monthThumbnails.get(monthKey),
+              };
+            });
 
           return {
             year,
@@ -158,6 +174,7 @@ export const useMonthData = () => {
               (sum, month) => sum + month.photoCount,
               0
             ),
+            thumbnailUri: yearThumbnails.get(year),
           };
         });
 

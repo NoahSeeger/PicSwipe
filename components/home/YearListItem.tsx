@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from "@/components/ThemeProvider";
 
 type Props = {
@@ -7,61 +8,46 @@ type Props = {
   months: Array<{ month: number }>;
   totalPhotos: number;
   onPress: () => void;
+  thumbnailUri?: string;
 };
 
-const MONTH_NAMES = [
-  "Jan",
-  "Feb",
-  "Mär",
-  "Apr",
-  "Mai",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Okt",
-  "Nov",
-  "Dez",
-];
 
-export function YearListItem({ year, months, totalPhotos, onPress }: Props) {
+
+export function YearListItem({ year, months, totalPhotos, onPress, thumbnailUri }: Props) {
   const { colors } = useTheme();
 
   const styles = StyleSheet.create({
     container: {
       backgroundColor: colors.card,
       borderRadius: 12,
-      padding: 16,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 2,
     },
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 8,
+    thumbnail: {
+      width: 60,
+      height: 60,
+      borderRadius: 8,
+      marginRight: 14,
+      backgroundColor: colors.border,
+    },
+    textContainer: {
+      flex: 1,
+      justifyContent: 'center',
     },
     year: {
-      fontSize: 20,
+      fontSize: 22,
       fontWeight: "bold",
       color: colors.text,
     },
     totalPhotos: {
-      fontSize: 16,
+      fontSize: 15,
       color: colors.secondary,
+      marginTop: 2,
     },
-    monthsContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 8,
-    },
-    monthBadge: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 4,
-    },
-    monthText: {
-      color: "#FFFFFF",
-      fontSize: 12,
+    chevron: {
+      marginLeft: 12,
     },
   });
 
@@ -69,22 +55,26 @@ export function YearListItem({ year, months, totalPhotos, onPress }: Props) {
     <Pressable
       style={({ pressed }) => [styles.container, pressed && { opacity: 0.7 }]}
       onPress={onPress}
+      accessibilityRole="button"
     >
-      <View style={styles.header}>
+      {thumbnailUri ? (
+        <Image source={{ uri: thumbnailUri }} style={styles.thumbnail} />
+      ) : (
+        <View style={styles.thumbnail} />
+      )}
+      <View style={styles.textContainer}>
         <Text style={styles.year}>{year}</Text>
         <Text style={styles.totalPhotos}>
           {totalPhotos.toLocaleString()} Fotos
         </Text>
       </View>
-      <View style={styles.monthsContainer}>
-        {months.map((month) => (
-          <View key={month.month} style={styles.monthBadge}>
-            <Text style={styles.monthText}>
-              {MONTH_NAMES[month.month - 1] || ""}
-            </Text>
-          </View>
-        ))}
-      </View>
+      <Ionicons
+        name="chevron-forward"
+        size={24}
+        color={colors.secondary}
+        style={styles.chevron}
+        accessibilityLabel="Details anzeigen"
+      />
     </Pressable>
   );
 }

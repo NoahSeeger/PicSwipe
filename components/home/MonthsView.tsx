@@ -1,27 +1,23 @@
 import React from "react";
-import { StyleSheet, View, ScrollView, Pressable } from "react-native";
+import { StyleSheet, View, FlatList, Pressable } from "react-native";
 import { Text } from "react-native";
 import { IconSymbol } from "../ui/IconSymbol";
+import { MonthListItem } from "./MonthListItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/components/ThemeProvider";
-
-type MonthData = {
-  month: string;
-  photoCount: number;
-  monthIndex: number;
-};
+import { useMonthThumbnails } from "@/hooks/useMonthThumbnails";
 
 type Props = {
   year: number;
-  months: MonthData[];
   onClose: () => void;
 };
 
-export function MonthsView({ year, months, onClose }: Props) {
+export function MonthsView({ year, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useTheme();
+  const { months, isLoading } = useMonthThumbnails(year);
 
   const styles = StyleSheet.create({
     container: {
@@ -49,35 +45,9 @@ export function MonthsView({ year, months, onClose }: Props) {
       lineHeight: 41,
       includeFontPadding: false,
     },
-    scrollView: {
-      flex: 1,
-      paddingHorizontal: 16,
-      paddingTop: 8,
-    },
-    monthItem: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      marginBottom: 8,
+    list: {
       padding: 16,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    monthContainer: {
-      flex: 1,
-    },
-    monthName: {
-      fontSize: 17,
-      fontWeight: "500",
-      color: colors.text,
-      marginBottom: 4,
-    },
-    photoCount: {
-      fontSize: 15,
-      color: colors.secondary,
-    },
-    pressed: {
-      opacity: 0.7,
+      gap: 12,
     },
   });
 
@@ -93,39 +63,28 @@ export function MonthsView({ year, months, onClose }: Props) {
         </Pressable>
         <Text style={styles.title}>{year}</Text>
       </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 20,
-        }}
-      >
-        {months.map((month) => (
-          <Pressable
-            key={month.month}
-            style={({ pressed }) => [
-              styles.monthItem,
-              pressed && styles.pressed,
-            ]}
-            onPress={() => {
-              router.push({
-                pathname: "/(tabs)/cleanup",
-                params: { year, month: month.monthIndex },
-              });
-            }}
-          >
-            <View style={styles.monthContainer}>
-              <Text style={styles.monthName}>{month.month}</Text>
-              <Text style={styles.photoCount}>{month.photoCount} Elemente</Text>
-            </View>
-            <IconSymbol
-              name="chevron.right"
-              size={20}
-              color={colors.secondary}
+      {isLoading ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <Text style={{ color: colors.secondary, fontSize: 16 }}>Lade Monate...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={months}
+          renderItem={({ item }) => (
+            <MonthListItem
+              key={item.month}
+              month={item.month}
+              year={year}
+              photoCount={item.photoCount}
+              isProcessed={false}
+              monthIndex={item.monthIndex}
+              thumbnailUri={item.thumbnailUri}
             />
-          </Pressable>
-        ))}
-      </ScrollView>
+          )}
+          keyExtractor={item => item.month}
+          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 20 }]}
+        />
+      )}
     </View>
   );
 }

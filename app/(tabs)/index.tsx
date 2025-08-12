@@ -109,6 +109,7 @@ export default function HomeScreen() {
                 year={year.year}
                 months={year.months.map((m) => ({ month: m.monthIndex + 1 }))}
                 totalPhotos={year.totalPhotos}
+                thumbnailUri={year.thumbnailUri}
                 onPress={() => handleYearPress(year.year)}
               />
             ))}
