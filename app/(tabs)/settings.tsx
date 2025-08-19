@@ -1,23 +1,28 @@
 import React from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SWIPE_LIMIT, useSwipeLimit } from "@/hooks/useSwipeLimit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/components/ThemeProvider";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { loadSwipes } = useSwipeLimit();
 
-  const resetOnboarding = async () => {
+  const reachSwipeLimit = async () => {
     try {
-      await AsyncStorage.removeItem("hasLaunched");
+      const today = new Date().toDateString();
+      await AsyncStorage.setItem("swipe_date", today);
+      await AsyncStorage.setItem("swipe_count", SWIPE_LIMIT.toString());
+      await loadSwipes();
       Alert.alert(
-        "Erfolg",
-        "Onboarding wurde zurückgesetzt. Starte die App neu, um die Änderungen zu sehen.",
+        "Swipes erreicht",
+        `Du hast jetzt das Tageslimit von ${SWIPE_LIMIT} Swipes erreicht. Die Paywall sollte nun erscheinen, wenn du weiter swipest.`,
         [{ text: "OK" }]
       );
     } catch (error) {
-      Alert.alert("Fehler", "Konnte Onboarding nicht zurücksetzen");
+      Alert.alert("Fehler", "Konnte Swipes nicht setzen");
     }
   };
 
@@ -65,8 +70,11 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Entwickleroptionen</Text>
         <View style={styles.devOptions}>
-          <Text style={styles.button} onPress={resetOnboarding}>
+          {/* <Text style={styles.button} onPress={resetOnboarding}>
             Onboarding zurücksetzen
+          </Text> */}
+          <Text style={styles.button} onPress={reachSwipeLimit}>
+            Swipes-Limit für Paywall-Test erreichen
           </Text>
         </View>
       </View>

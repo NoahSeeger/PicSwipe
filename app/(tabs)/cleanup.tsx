@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { View, StyleSheet, Modal, Linking, Text } from "react-native";
 import { RevenueCatUI, PAYWALL_RESULT } from "react-native-purchases-ui";
 import { useLocalSearchParams } from "expo-router";
@@ -50,11 +51,19 @@ export default function CleanupScreen() {
     currentAlbumTitle,
   } = usePhotoManager();
 
-  const { swipes, incrementSwipe, hasReachedLimit, isPro } = useSwipeLimit();
+  const { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes } = useSwipeLimit();
+
+  // Synchronisiere Swipes bei jedem Focus (z.B. nach Settings-Änderung)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadSwipes();
+    }, [])
+  );
 
   // Handle swipe with paywall logic
   const handleSwipeWithPaywall = async (direction: "left" | "right") => {
     if (hasReachedLimit) {
+      console.log('[Paywall] Limit erreicht, Paywall würde jetzt angezeigt werden!');
       try {
         const result = await RevenueCatUI.presentPaywallIfNeeded({
           requiredEntitlementIdentifier: "pro",
