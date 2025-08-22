@@ -53,6 +53,30 @@ export default function SettingsScreen() {
       Alert.alert("Fehler", "Paywall konnte nicht angezeigt werden: " + msg);
     }
   };
+  
+  // Käufe wiederherstellen-Funktion
+  const restorePurchases = async () => {
+    try {
+      setLoading(true);
+      // RevenueCat's Methode zum Wiederherstellen von Käufen
+      const customerInfo = await Purchases.restorePurchases();
+      
+      // Aktualisiere Abo-Status nach Wiederherstellung
+      await loadSubscriptionInfo();
+      
+      // Zeige Erfolgs- oder Info-Meldung
+      if (customerInfo.entitlements.active["pro"]) {
+        Alert.alert("Erfolg", "Pro-Zugang wurde wiederhergestellt!");
+      } else {
+        Alert.alert("Information", "Keine Pro-Käufe gefunden, die wiederhergestellt werden könnten.");
+      }
+    } catch (e: any) {
+      const msg = typeof e === "object" && e && "message" in e ? (e as any).message : String(e);
+      Alert.alert("Fehler", "Käufe konnten nicht wiederhergestellt werden: " + msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Lädt Informationen zum Abo aus RevenueCat
   const loadSubscriptionInfo = async () => {
@@ -198,6 +222,10 @@ export default function SettingsScreen() {
       padding: 20,
       alignItems: "center",
     },
+    restoreButton: {
+      backgroundColor: colors.secondary,
+      marginTop: 10,
+    },
   });
 
   return (
@@ -242,6 +270,12 @@ export default function SettingsScreen() {
               <TouchableOpacity style={styles.manageButton} onPress={manageSubscription}>
                 <Text style={styles.manageButtonText}>Abo verwalten</Text>
               </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.manageButton]} 
+                onPress={restorePurchases}>
+                <Text style={styles.manageButtonText}>Käufe wiederherstellen</Text>
+              </TouchableOpacity>
             </View>
           </>
         )}
@@ -256,6 +290,9 @@ export default function SettingsScreen() {
           </Text> */}
           <Text style={styles.button} onPress={reachSwipeLimit}>
             Swipes-Limit für Paywall-Test erreichen
+          </Text>
+          <Text style={styles.button} onPress={showPaywall}>
+            Pro kaufen (Paywall anzeigen)
           </Text>
           <Text style={styles.button} onPress={loadSubscriptionInfo}>
             Abo-Status neu laden
