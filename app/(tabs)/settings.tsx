@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
+import RevenueCatUI from "react-native-purchases-ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SWIPE_LIMIT, useSwipeLimit } from "@/hooks/useSwipeLimit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +24,18 @@ export default function SettingsScreen() {
       );
     } catch (error) {
       Alert.alert("Fehler", "Konnte Swipes nicht setzen");
+    }
+  };
+
+  // Button-Handler für Paywall
+  const showPaywall = async () => {
+    try {
+      await RevenueCatUI.presentPaywallIfNeeded({
+        requiredEntitlementIdentifier: "pro",
+      });
+    } catch (e: any) {
+      const msg = typeof e === "object" && e && "message" in e ? (e as any).message : String(e);
+      Alert.alert("Fehler", "Paywall konnte nicht angezeigt werden: " + msg);
     }
   };
 
@@ -75,6 +88,9 @@ export default function SettingsScreen() {
           </Text> */}
           <Text style={styles.button} onPress={reachSwipeLimit}>
             Swipes-Limit für Paywall-Test erreichen
+          </Text>
+          <Text style={styles.button} onPress={showPaywall}>
+            Pro kaufen (Paywall anzeigen)
           </Text>
         </View>
       </View>

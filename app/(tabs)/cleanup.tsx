@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { View, StyleSheet, Modal, Linking, Text } from "react-native";
-import { RevenueCatUI, PAYWALL_RESULT } from "react-native-purchases-ui";
+import RevenueCatUI from "react-native-purchases-ui";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/components/ThemeProvider";
@@ -51,7 +51,7 @@ export default function CleanupScreen() {
     currentAlbumTitle,
   } = usePhotoManager();
 
-  const { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes } = useSwipeLimit();
+  const { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes, refreshProStatus } = useSwipeLimit();
 
   // Synchronisiere Swipes bei jedem Focus (z.B. nach Settings-Änderung)
   useFocusEffect(
@@ -68,16 +68,20 @@ export default function CleanupScreen() {
         const result = await RevenueCatUI.presentPaywallIfNeeded({
           requiredEntitlementIdentifier: "pro",
         });
-        if (
-          result === PAYWALL_RESULT.PURCHASED ||
-          result === PAYWALL_RESULT.RESTORED
-        ) {
+        // result kann z.B. "PURCHASED", "RESTORED", "CANCELLED" sein
+        if (result === "PURCHASED" || result === "RESTORED") {
+          await refreshProStatus(); // Pro-Status sofort aktualisieren
           incrementSwipe();
           moveToNextPhoto(direction === "left");
         }
-        // else: do nothing
-      } catch (e) {
-        // do nothing or optionally log error
+      } catch (e: any) {
+        const msg = typeof e === "object" && e && "message" in e ? (e as any).message : String(e);
+        // Optional: Zeige einen Alert, wie im Settings-Button
+        if (typeof window !== "undefined" && window.alert) {
+          window.alert("Paywall konnte nicht angezeigt werden: " + msg);
+        } else {
+          console.log("Paywall konnte nicht angezeigt werden: " + msg);
+        }
       }
     } else {
       incrementSwipe();

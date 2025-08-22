@@ -9,7 +9,14 @@ export const useSwipeLimit = () => {
   const [swipes, setSwipes] = useState(0);
   const [isPro, setIsPro] = useState(false);
 
-  // loadSwipes jetzt im Funktionsscope, damit von außen nutzbar
+  // Pro-Status neu laden
+  const refreshProStatus = async () => {
+    const info = await Purchases.getCustomerInfo();
+    setIsPro(info.entitlements.active.pro != null);
+    return info.entitlements.active.pro != null;
+  };
+
+  // Swipes und Pro-Status laden
   const loadSwipes = async () => {
     const today = new Date().toDateString();
     const storedDate = await AsyncStorage.getItem("swipe_date");
@@ -23,14 +30,10 @@ export const useSwipeLimit = () => {
       setSwipes(Number(count) || 0);
       console.log('[SwipeLimit] Swipes geladen:', count);
     }
+    await refreshProStatus();
   };
 
   useEffect(() => {
-    const checkEntitlement = async () => {
-      const info = await Purchases.getCustomerInfo();
-      setIsPro(info.entitlements.active.pro != null);
-    };
-    checkEntitlement();
     loadSwipes();
   }, []);
 
@@ -44,5 +47,5 @@ export const useSwipeLimit = () => {
   const hasReachedLimit = !isPro && swipes >= SWIPE_LIMIT;
   console.log('[SwipeLimit] Aktueller Stand:', { swipes, SWIPE_LIMIT, isPro, hasReachedLimit });
 
-  return { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes };
+  return { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes, refreshProStatus };
 };
