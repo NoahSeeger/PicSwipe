@@ -87,6 +87,7 @@ export default function CleanupScreen() {
     isLastMonth,
     currentAlbumTitle,
     getNextMonthLabel, // Neue Funktion
+    uniqueMonthsCount, // Neue Eigenschaft für kumulative Löschungen
   } = usePhotoManager();
 
   const { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes, refreshProStatus } = useSwipeLimit();
@@ -285,7 +286,7 @@ export default function CleanupScreen() {
           currentMonth
         )}
         year={currentMonth.getFullYear()}
-        photosToDelete={photosToDelete.length}
+        photosToDelete={photosToDelete}
         totalSize={photosToDelete.reduce(
           (acc, photo) => acc + (photo.fileSize || 0),
           0
@@ -296,6 +297,7 @@ export default function CleanupScreen() {
         onRemovePhoto={removeFromDeleteList}
         isLastMonth={isLastMonth}
         nextMonthLabel={nextMonthLabel}
+        uniqueMonthsCount={uniqueMonthsCount}
       />
     );
   }

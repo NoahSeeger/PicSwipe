@@ -9,7 +9,7 @@ import { DeleteButton } from "./DeleteButton";
 type MonthCompleteScreenProps = {
   month: string;
   year: number;
-  photosToDelete: number;
+  photosToDelete: PhotoToDelete[];
   totalSize: number;
   onDelete: () => Promise<boolean>;
   onContinue: () => void;
@@ -17,6 +17,7 @@ type MonthCompleteScreenProps = {
   onRemovePhoto: (id: string) => void;
   isLastMonth: boolean;
   nextMonthLabel?: string;
+  uniqueMonthsCount?: number; // Neue Eigenschaft
 };
 
 export function MonthCompleteScreen({
@@ -30,6 +31,7 @@ export function MonthCompleteScreen({
   onRemovePhoto,
   isLastMonth,
   nextMonthLabel,
+  uniqueMonthsCount,
 }: MonthCompleteScreenProps) {
   const { colors } = useTheme();
 
@@ -51,10 +53,13 @@ export function MonthCompleteScreen({
         <View style={[styles.statsContainer, { backgroundColor: colors.card }]}>
           <View style={styles.statItem}>
             <Text style={[styles.statValue, { color: colors.text }]}>
-              {photosToDelete}
+              {photosToDelete.length}
             </Text>
             <Text style={[styles.statLabel, { color: colors.secondary }]}>
-              Fotos zum Löschen
+              {(uniqueMonthsCount && uniqueMonthsCount > 1)
+                ? `Fotos aus ${uniqueMonthsCount} Monaten` 
+                : 'Fotos zum Löschen'
+              }
             </Text>
           </View>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />

@@ -7,6 +7,7 @@ export type PhotoToDelete = {
   id: string;
   uri: string;
   fileSize?: number;
+  monthYear?: string; // Neue Eigenschaft: "November 2022"
 };
 
 type AssetInfo = MediaLibrary.Asset & {
@@ -189,7 +190,8 @@ export const usePhotoManager = () => {
       });
       setMonthPhotos([]);
       setCurrentIndex(0);
-      setPhotosToDelete([]);
+      // photosToDelete NICHT mehr zurücksetzen - kumulative Sammlung über Monate hinweg
+      // setPhotosToDelete([]);  // <- Entfernt
 
       const options: MediaLibrary.AssetsOptions = {
         mediaType: MediaLibrary.MediaType.photo,
@@ -396,12 +398,18 @@ export const usePhotoManager = () => {
         );
         if (!isDuplicate) {
           const actualSize = await getActualFileSize(currentPhoto);
+          // Berechne monthYear basierend auf dem aktuellen Monat
+          const monthYear = currentMonth 
+            ? `${new Intl.DateTimeFormat("de-DE", { month: "long" }).format(currentMonth)} ${currentMonth.getFullYear()}`
+            : undefined;
+          
           setPhotosToDelete((prev) => [
             ...prev,
             {
               id: currentPhoto.id,
               uri: currentPhoto.uri,
               fileSize: actualSize,
+              monthYear,
             },
           ]);
         }
@@ -457,6 +465,12 @@ export const usePhotoManager = () => {
 
   const calculateTotalSize = (photos: PhotoToDelete[]) => {
     return photos.reduce((acc, photo) => acc + (photo.fileSize || 0), 0);
+  };
+
+  // Neue Hilfsfunktion: Zähle die verschiedenen Monate
+  const getUniqueMonthsCount = (photos: PhotoToDelete[]) => {
+    const uniqueMonths = new Set(photos.map(photo => photo.monthYear).filter(Boolean));
+    return uniqueMonths.size;
   };
 
   const findPreviousMonthWithPhotos = useCallback(async (startDate: Date) => {
@@ -592,5 +606,6 @@ export const usePhotoManager = () => {
     isLastMonth,
     currentAlbumTitle,
     getNextMonthLabel, // Neue Funktion exportieren
+    uniqueMonthsCount: getUniqueMonthsCount(photosToDelete), // Neue Funktion exportieren
   };
 };
