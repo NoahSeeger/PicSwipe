@@ -1,0 +1,9 @@
+{
+  "title": "Albums",
+  "noAlbums": "No albums found",
+  "photosCount": "{{count}} photo",
+  "photosCount_plural": "{{count}} photos",
+  "albumsTitle": "Your Albums", 
+  "loadingAlbums": "Loading albums...",
+  "selectAlbum": "Select Album"
+}

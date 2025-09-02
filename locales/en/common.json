@@ -1,0 +1,40 @@
+{
+  "navigation": {
+    "home": "Home",
+    "albums": "Albums",
+    "cleanup": "Cleanup",
+    "settings": "Settings"
+  },
+  "buttons": {
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "skip": "Skip",
+    "undo": "Undo",
+    "next": "Next",
+    "back": "Back",
+    "save": "Save",
+    "close": "Close"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "photos": "Photos",
+    "photo": "Photo",
+    "month": "Month",
+    "months": "Months",
+    "year": "Year",
+    "years": "Years",
+    "photoCount": "{{count}} Photo", 
+    "photoCount_plural": "{{count}} Photos"
+  },
+  "permissions": {
+    "photoAccess": "Photo Access",
+    "undeterminedMessage": "PicSwipe uses access to your photos to provide gallery functions (e.g., organizing and saving storage space). You decide whether to continue. You can change this at any time in the settings.",
+    "deniedMessage": "Photo access has been disabled. To fully use PicSwipe, you can enable permission in iOS Settings. Use the button below to go to Settings.",
+    "defaultMessage": "Some features require access to your photos.",
+    "openSettings": "Open Settings",
+    "continue": "Continue"
+  }
+}

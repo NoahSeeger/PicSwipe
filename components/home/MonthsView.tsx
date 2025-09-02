@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/components/ThemeProvider";
 import { useMonthThumbnails } from "@/hooks/useMonthThumbnails";
+import { useI18n } from "@/hooks/useI18n";
 
 type Props = {
   year: number;
@@ -18,6 +19,7 @@ export function MonthsView({ year, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useI18n('home');
   const { months, isLoading, loadingState, progress } = useMonthThumbnails(year);
   
   // Animation für den Fortschrittsbalken
@@ -90,7 +92,7 @@ export function MonthsView({ year, onClose }: Props) {
           style={[styles.backButton, { marginTop: insets.top }]}
         >
           <IconSymbol name="chevron.left" size={28} color={colors.primary} />
-          <Text style={styles.backText}>Übersicht</Text>
+          <Text style={styles.backText}>{t('monthsView.backButton')}</Text>
         </Pressable>
         <Text style={styles.title}>{year}</Text>
       </View>

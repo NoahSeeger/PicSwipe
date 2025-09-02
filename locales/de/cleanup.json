@@ -1,0 +1,44 @@
+{
+  "monthComplete": {
+    "title": "Monat durchgearbeitet!",
+    "subtitle": "Du hast {{month}} {{year}} sortiert",
+    "stats": {
+      "photosToDelete": "Fotos zum Löschen",
+      "photosFromMonths": "Fotos aus {{count}} Monaten",
+      "storageSpace": "Speicherplatz"
+    },
+    "continueToNext": "Weiter zu {{nextMonth}}",
+    "allMonthsComplete": "Alle Monate bearbeitet!"
+  },
+    "swipeablePhoto": {
+      "keepPhoto": "Foto behalten",
+      "deletePhoto": "Foto löschen"
+    },
+    "loading": {
+      "searchingPhotos": "Suche Fotos...",
+      "loadingFirst": "Lade erste {count} Fotos...",
+      "readyToSort": "Bereit zum Sortieren! Weitere Fotos werden im Hintergrund geladen...",
+      "allPhotosLoaded": "Alle Fotos geladen!"
+    },
+    "headerControls": {
+      "photosMarked": "{{count}} markiert"
+    },
+    "loadingScreen": {
+      "preparingPhotos": "Fotos werden vorbereitet...",
+      "loadingProgress": "{{current}} von {{total}} geladen",
+      "loadingFirst": "Lade erste {{count}} Fotos...",
+      "loadingRemaining": "Lade weitere Fotos im Hintergrund..."
+    },
+    "deletePreview": {
+      "title": "Zu löschende Fotos", 
+      "confirmTitle": "Fotos löschen",
+      "confirmMessage": "Möchten Sie wirklich diese Fotos löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteButton": "Löschen",
+      "deleteAll": "Alle Fotos löschen",
+      "cancel": "Abbrechen"
+    },
+    "deleteButton": {
+      "deletePhotos": "Löschen",
+      "longPressHint": "Zum Löschen gedrückt halten"
+  }
+}

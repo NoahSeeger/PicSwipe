@@ -1,0 +1,41 @@
+{
+  "title": "Photos",
+  "welcome": "Welcome to PicSwipe", 
+  "totalPhotos": "{{count}} photo total",
+  "totalPhotos_plural": "{{count}} photos total",
+  "loading": {
+    "initial": "Initializing...",
+    "photos": "Loading photos...",
+    "processing": "Processing data...",
+    "thumbnails": "Loading thumbnails...",
+    "complete": "Complete",
+    "general": "Loading..."
+  },
+  "monthsView": {
+    "title": "Overview",
+    "backButton": "Back",
+    "noPhotos": "No photos found",
+    "photosCount": "{{count}} photo",
+    "photosCount_plural": "{{count}} photos",
+    "loadingThumbnails": "Loading thumbnails...",
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    }
+  },
+  "yearView": {
+    "year": "{{year}}",
+    "monthsCount": "{{count}} month",
+    "monthsCount_plural": "{{count}} months"
+  }
+}

@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useTheme } from "@/components/ThemeProvider";
+import { useI18n } from "@/hooks/useI18n";
 
 type LoadingScreenProps = {
   progress: {
@@ -15,6 +16,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   message = "Lade Fotos...",
 }) => {
   const { colors } = useTheme();
+  const { t } = useI18n('cleanup');
 
   const progressPercentage =
     progress.total > 0
@@ -57,8 +59,8 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     },
     progressText: {
       fontSize: 14,
-      color: colors.textSecondary || colors.text,
-      marginBottom: 10,
+      color: colors.secondary,
+      marginTop: 8,
     },
     countText: {
       fontSize: 16,
@@ -87,11 +89,11 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             </View>
 
             <Text style={styles.progressText}>
-              {progressPercentage}% abgeschlossen
+              {progressPercentage}% {t('loadingScreen.loadingProgress', { current: progress.current, total: progress.total }).split(' ').slice(-1)[0]}
             </Text>
 
             <Text style={styles.countText}>
-              {progress.current} von {progress.total} Fotos
+              {t('loadingScreen.loadingProgress', { current: progress.current, total: progress.total })}
             </Text>
           </>
         )}

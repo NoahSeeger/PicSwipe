@@ -1,0 +1,58 @@
+{
+  "title": "Einstellungen",
+  "language": {
+    "title": "Sprache",
+    "german": "Deutsch",
+    "english": "English"
+  },
+    "subscription": {
+      "title": "Abonnement-Status",
+      "status": "Status",
+      "product": "Produkt",
+      "nextPayment": "Nächste Zahlung",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "noSubscription": "Kein Abo",
+      "premium": "Premium",
+      "free": "Kostenlos",
+      "upgrade": "Upgrade auf Premium",
+      "manage": "Abonnement verwalten",
+      "restore": "Käufe wiederherstellen",
+      "loading": "Lade Abo-Informationen...",
+      "products": {
+        "noSubscription": "Kein Abo",
+        "proMonthly": "Pro Monatsabo",
+        "proLifetime": "Pro Lebenslanger Zugang"
+      },
+      "alerts": {
+        "information": "Information",
+        "error": "Fehler",
+        "noPurchasesFound": "Keine Pro-Käufe gefunden, die wiederhergestellt werden könnten.",
+        "restoreError": "Käufe konnten nicht wiederhergestellt werden",
+        "manageError": "Abo-Verwaltungsseite konnte nicht geöffnet werden",
+        "subscriptionInfoError": "Abo-Informationen konnten nicht geladen werden",
+        "manageErrorGeneral": "Abo-Verwaltung konnte nicht geöffnet werden"
+      }
+    },
+    "storage": {
+      "title": "Speicher",
+      "used": "Verwendet",
+      "free": "Frei"
+    },
+    "support": {
+      "title": "Support",
+      "contact": "Kontakt",
+      "privacy": "Datenschutz",
+      "terms": "Nutzungsbedingungen"
+    },
+    "debug": {
+      "toggle": "Debug Info umschalten"
+    },
+    "developer": {
+      "title": "Entwickleroptionen",
+      "reachSwipeLimit": "Swipes-Limit für Paywall-Test erreichen",
+      "showPaywall": "Pro kaufen (Paywall anzeigen)",
+      "reloadSubscription": "Abo-Status neu laden",
+      "debugReceipts": "🐛 Receipt Validation Debug"
+    }
+}

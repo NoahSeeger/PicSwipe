@@ -15,12 +15,14 @@ import { YearListItem } from "@/components/home/YearListItem";
 import { YearListSkeleton } from "@/components/home/YearListSkeleton";
 import { router } from "expo-router";
 import { useTheme } from "@/components/ThemeProvider";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function HomeScreen() {
   const { yearData, isLoading, loadingState, progress, refreshData } = useMonthData();
   const insets = useSafeAreaInsets();
   const totalPhotos = yearData.reduce((sum, year) => sum + year.totalPhotos, 0);
   const { colors, isDark } = useTheme();
+  const { t } = useI18n('home');
   
   // Animation für den Fortschrittsbalken
   const progressAnim = React.useRef(new Animated.Value(0)).current;
@@ -111,7 +113,7 @@ export default function HomeScreen() {
       {isLoading && loadingState === 'initial' && yearData.length === 0 ? (
         <View style={[styles.loadingContainer, { paddingTop: insets.top + 8 }]}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Lade Fotos...</Text>
+          <Text style={styles.loadingText}>{t('loading.photos')}</Text>
           <View style={styles.progressContainer}>
             <Animated.View 
               style={[
@@ -126,12 +128,11 @@ export default function HomeScreen() {
             />
           </View>
           <Text style={styles.loadingStateText}>
-            {/* @ts-ignore - Type-Fehler hier ignorieren */}
-            {loadingState === 'initial' ? 'Initialisiere...' :
-             loadingState === 'loading-photos' ? 'Lade Fotos...' :
-             loadingState === 'processing-years' ? 'Verarbeite Daten...' :
-             loadingState === 'loading-thumbnails' ? 'Lade Vorschaubilder...' :
-             loadingState === 'complete' ? 'Abgeschlossen' : 'Laden...'}
+            {loadingState === 'initial' ? t('loading.initial') :
+             loadingState === 'loading-photos' ? t('loading.photos') :
+             loadingState === 'processing-years' ? t('loading.processing') :
+             loadingState === 'loading-thumbnails' ? t('loading.thumbnails') :
+             loadingState === 'complete' ? t('loading.complete') : t('loading.general')}
           </Text>
         </View>
       ) : (
@@ -150,16 +151,16 @@ export default function HomeScreen() {
           }
         >
           <View style={styles.header}>
-            <Text style={styles.title}>Fotos</Text>
+            <Text style={styles.title}>{t('title')}</Text>
             <Text style={styles.subtitle}>
               {isLoading && loadingState !== 'complete' ? (
                 /* @ts-ignore - Type-Fehler hier ignorieren */
-                loadingState === 'loading-photos' ? 'Lade Fotos...' :
-                loadingState === 'processing-years' ? 'Verarbeite Daten...' :
-                loadingState === 'loading-thumbnails' ? 'Lade Vorschaubilder...' :
-                'Laden...'
+                loadingState === 'loading-photos' ? t('loading.photos') :
+                loadingState === 'processing-years' ? t('loading.processing') :
+                loadingState === 'loading-thumbnails' ? t('loading.thumbnails') :
+                t('loading.general')
               ) : (
-                `${totalPhotos.toLocaleString()} Fotos insgesamt`
+                t('totalPhotos', { count: totalPhotos })
               )}
             </Text>
             

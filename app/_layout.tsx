@@ -12,6 +12,7 @@ import { Appearance } from "react-native";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { PhotoPermissionProvider } from "@/components/PhotoPermissionProvider";
 import { getRevenueCatApiKey, getReceiptValidationInfo } from "@/constants/RevenueCatConfig";
+import '@/i18n'; // i18n initialisieren
 
 export default function RootLayout() {
   const router = useRouter();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Alert, TouchableOpacity, Linking, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, Alert, TouchableOpacity, Linking, ActivityIndicator, Pressable } from "react-native";
 import RevenueCatUI from "react-native-purchases-ui";
 import Purchases from "react-native-purchases";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -7,10 +7,16 @@ import { SWIPE_LIMIT, useSwipeLimit } from "@/hooks/useSwipeLimit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/components/ThemeProvider";
 import { getCustomerInfoWithFallback, restorePurchasesWithFallback, debugReceiptValidation } from "@/utils/receiptValidation";
+import { useI18n, useDateFormat } from "@/hooks/useI18n";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { changeLanguage } from "@/i18n";
+import * as Haptics from "expo-haptics";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t, language, isReady } = useI18n('settings');
+  const { formatDate } = useDateFormat();
   const { loadSwipes } = useSwipeLimit();
   
   // State für RevenueCat-Informationen
@@ -94,14 +100,14 @@ export default function SettingsScreen() {
         if (result.customerInfo.entitlements.active["pro"]) {
           Alert.alert("Erfolg", "Pro-Zugang wurde wiederhergestellt!");
         } else {
-          Alert.alert("Information", "Keine Pro-Käufe gefunden, die wiederhergestellt werden könnten.");
+          Alert.alert(t('subscription.alerts.information'), t('subscription.alerts.noPurchasesFound'));
         }
       } else {
         Alert.alert("Fehler", `Käufe konnten nicht wiederhergestellt werden: ${result.error}`);
       }
     } catch (e: any) {
       const msg = typeof e === "object" && e && "message" in e ? (e as any).message : String(e);
-      Alert.alert("Fehler", "Käufe konnten nicht wiederhergestellt werden: " + msg);
+      Alert.alert(t('subscription.alerts.error'), t('subscription.alerts.restoreError') + ": " + msg);
     } finally {
       setLoading(false);
     }
@@ -123,15 +129,15 @@ export default function SettingsScreen() {
         const isActive = proEntitlement != null;
         
         // Hole Produktname und Ablaufdatum, falls vorhanden
-        let productName = "Kein Abo";
+        let productName = t('subscription.products.noSubscription');
         let expirationDate = null;
         
         if (isActive && proEntitlement) {
           // Setze Produktname basierend auf der productIdentifier
           if (proEntitlement.productIdentifier === "pro_monthly") {
-            productName = "Pro Monatsabo";
+            productName = t('subscription.products.proMonthly');
           } else if (proEntitlement.productIdentifier === "pro_lifetime") {
-            productName = "Pro Lebenslanger Zugang";
+            productName = t('subscription.products.proLifetime');
           } else {
             productName = proEntitlement.productIdentifier || "Pro";
           }
@@ -155,12 +161,12 @@ export default function SettingsScreen() {
         
       } else {
         console.error('[Settings] Fehler beim Laden der Abo-Informationen:', result.error);
-        Alert.alert("Fehler", `Abo-Informationen konnten nicht geladen werden: ${result.error}`);
+        Alert.alert(t('subscription.alerts.error'), `${t('subscription.alerts.subscriptionInfoError')}: ${result.error}`);
       }
       
     } catch (error) {
       console.error("Unerwarteter Fehler beim Laden der Abo-Informationen:", error);
-      Alert.alert("Fehler", "Abo-Informationen konnten nicht geladen werden");
+      Alert.alert(t('subscription.alerts.error'), t('subscription.alerts.subscriptionInfoError'));
     } finally {
       setLoading(false);
     }
@@ -176,11 +182,34 @@ export default function SettingsScreen() {
       const subscriptionUrl = 'https://apps.apple.com/account/subscriptions';
       Linking.openURL(subscriptionUrl).catch(err => {
         console.error("Konnte URL nicht öffnen:", err);
-        Alert.alert("Fehler", "Abo-Verwaltungsseite konnte nicht geöffnet werden");
+        Alert.alert(t('subscription.alerts.error'), t('subscription.alerts.manageError'));
       });
     } catch (error) {
       console.error("Fehler beim Öffnen der Abo-Verwaltung:", error);
-      Alert.alert("Fehler", "Abo-Verwaltung konnte nicht geöffnet werden");
+      Alert.alert(t('subscription.alerts.error'), t('subscription.alerts.manageErrorGeneral'));
+    }
+  };
+
+  // Sprachen-Optionen
+  const languages = [
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+  ];
+
+  const handleLanguageChange = async (languageCode: string) => {
+    if (languageCode === language) return;
+
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await changeLanguage(languageCode);
+      
+      Alert.alert(
+        t('language.title'),
+        `Sprache wurde geändert`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error changing language:', error);
     }
   };
   
@@ -269,43 +298,77 @@ export default function SettingsScreen() {
       backgroundColor: colors.secondary,
       marginTop: 10,
     },
+    languageSection: {
+      gap: 8,
+    },
+    languageOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 12,
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      marginBottom: 4,
+    },
+    languageOptionActive: {
+      backgroundColor: colors.primary + '20',
+      borderWidth: 2,
+      borderColor: colors.primary,
+    },
+    languageFlag: {
+      fontSize: 20,
+      marginRight: 12,
+    },
+    languageText: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.text,
+    },
   });
+
+  // Warte bis i18n initialisiert ist
+  if (!isReady) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Einstellungen</Text>
+      <Text style={styles.title}>{t('title')}</Text>
       
       {/* Abonnement-Sektion */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Abonnement-Status</Text>
+        <Text style={styles.sectionTitle}>{t('subscription.title')}</Text>
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={{ color: colors.text, marginTop: 10 }}>Lade Abo-Informationen...</Text>
+            <Text style={{ color: colors.text, marginTop: 10 }}>{t('subscription.loading')}</Text>
           </View>
         ) : (
           <>
             <View style={styles.subscriptionInfo}>
               <View style={styles.subscriptionRow}>
-                <Text style={styles.subscriptionLabel}>Status:</Text>
+                <Text style={styles.subscriptionLabel}>{t('subscription.status')}:</Text>
                 <Text style={[
                   styles.subscriptionValue, 
                   subscription.isActive ? styles.proStatus : {}
                 ]}>
-                  {subscription.isActive ? "Aktiv" : "Inaktiv"}
+                  {subscription.isActive ? t('subscription.active') : t('subscription.inactive')}
                 </Text>
               </View>
               
               <View style={styles.subscriptionRow}>
-                <Text style={styles.subscriptionLabel}>Produkt:</Text>
+                <Text style={styles.subscriptionLabel}>{t('subscription.product')}:</Text>
                 <Text style={styles.subscriptionValue}>{subscription.productName}</Text>
               </View>
               
               {subscription.expirationDate && (
                 <View style={styles.subscriptionRow}>
-                  <Text style={styles.subscriptionLabel}>Nächste Zahlung:</Text>
+                  <Text style={styles.subscriptionLabel}>{t('subscription.nextPayment')}:</Text>
                   <Text style={styles.subscriptionValue}>
-                    {subscription.expirationDate.toLocaleDateString()}
+                    {formatDate(subscription.expirationDate)}
                   </Text>
                 </View>
               )}
@@ -322,6 +385,37 @@ export default function SettingsScreen() {
             </View>
           </>
         )}
+      </View>
+      
+      {/* Sprach-Sektion */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('language.title')}</Text>
+        <View style={styles.languageSection}>
+          {languages.map((lang) => {
+            const isActive = language === lang.code;
+            
+            return (
+              <Pressable
+                key={lang.code}
+                style={[
+                  styles.languageOption,
+                  isActive && styles.languageOptionActive,
+                ]}
+                onPress={() => handleLanguageChange(lang.code)}
+              >
+                <Text style={styles.languageFlag}>{lang.flag}</Text>
+                <Text style={styles.languageText}>{lang.name}</Text>
+                {isActive && (
+                  <IconSymbol
+                    name="checkmark.circle.fill"
+                    size={20}
+                    color={colors.primary}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
       
       {/* Entwickleroptionen */}

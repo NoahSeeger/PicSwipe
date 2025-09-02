@@ -10,6 +10,8 @@ import { useRouter } from "expo-router";
 // Hooks
 import { usePhotoManager } from "@/hooks/usePhotoManager";
 import { useSwipeLimit } from "@/hooks/useSwipeLimit";
+import { useI18n } from "@/hooks/useI18n";
+import { useDateFormat } from "@/hooks/useI18n";
 
 // Components
 import { HeaderControls } from "@/components/cleanup/HeaderControls";
@@ -36,6 +38,8 @@ export default function CleanupScreen() {
   const { colors, isDark } = useTheme();
   const router = useRouter();
   const navigation = useNavigation();
+  const { t } = useI18n('cleanup');
+  const { getMonthName } = useDateFormat();
 
   // Deaktiviere Swipe-Back-Geste explizit für diesen Screen
   useLayoutEffect(() => {
@@ -206,7 +210,7 @@ export default function CleanupScreen() {
       case "initial":
         return {
           progress: { current: 0, total: Math.max(loadingProgress.total, 1) },
-          message: "Suche Fotos...",
+          message: t('loading.searchingPhotos'),
         };
       case "eager":
         return {
@@ -214,10 +218,9 @@ export default function CleanupScreen() {
             current: loadingProgress.current,
             total: Math.min(loadingProgress.eagerCount, loadingProgress.total),
           },
-          message: `Lade erste ${Math.min(
-            loadingProgress.eagerCount,
-            loadingProgress.total
-          )} Fotos...`,
+          message: t('loading.loadingFirst', { 
+            count: Math.min(loadingProgress.eagerCount, loadingProgress.total) 
+          }),
         };
       case "background":
         return {
@@ -225,8 +228,7 @@ export default function CleanupScreen() {
             current: loadingProgress.eagerCount,
             total: loadingProgress.eagerCount,
           },
-          message:
-            "Bereit zum Sortieren! Weitere Fotos werden im Hintergrund geladen...",
+          message: t('loading.readyToSort'),
         };
       case "complete":
         return {
@@ -234,7 +236,7 @@ export default function CleanupScreen() {
             current: loadingProgress.total,
             total: loadingProgress.total,
           },
-          message: "Alle Fotos geladen!",
+          message: t('loading.allPhotosLoaded'),
         };
       default:
         return {
@@ -282,9 +284,7 @@ export default function CleanupScreen() {
     // Wenn ein Monat durchgearbeitet wurde
     return (
       <MonthCompleteScreen
-        month={new Intl.DateTimeFormat("de-DE", { month: "long" }).format(
-          currentMonth
-        )}
+        month={getMonthName(currentMonth.getMonth())}
         year={currentMonth.getFullYear()}
         photosToDelete={photosToDelete}
         totalSize={photosToDelete.reduce(

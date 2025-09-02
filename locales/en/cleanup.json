@@ -1,0 +1,44 @@
+{
+  "monthComplete": {
+    "title": "Month completed!",
+    "subtitle": "You have sorted {{month}} {{year}}",
+    "stats": {
+      "photosToDelete": "Photos to delete",
+      "photosFromMonths": "Photos from {{count}} months",
+      "storageSpace": "Storage space"
+    },
+    "continueToNext": "Continue to {{nextMonth}}",
+    "allMonthsComplete": "All months completed!"
+  },
+    "swipeablePhoto": {
+      "keepPhoto": "Keep photo",
+      "deletePhoto": "Delete photo"
+    },
+    "loading": {
+      "searchingPhotos": "Searching photos...",
+      "loadingFirst": "Loading first {count} photos...",
+      "readyToSort": "Ready to sort! More photos are loading in the background...",
+      "allPhotosLoaded": "All photos loaded!"
+    },
+    "headerControls": {
+      "photosMarked": "{{count}} marked"
+    },
+    "loadingScreen": {
+      "preparingPhotos": "Preparing photos...",
+      "loadingProgress": "{{current}} of {{total}} loaded",
+      "loadingFirst": "Loading first {{count}} photos...",
+      "loadingRemaining": "Loading more photos in the background..."
+    },
+    "deletePreview": {
+      "title": "Photos to delete",
+      "confirmTitle": "Delete photos",
+      "confirmMessage": "Do you really want to delete these photos? This action cannot be undone.",
+      "deleteButton": "Delete",
+      "deleteAll": "Delete all photos",
+      "cancel": "Cancel"
+    },
+    "deleteButton": {
+      "deletePhotos": "Delete",
+      "longPressHint": "Hold to delete"
+  }
+}

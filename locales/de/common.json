@@ -1,0 +1,41 @@
+{
+  "navigation": {
+    "home": "Fotos",
+    "albums": "Alben",
+    "cleanup": "Bereinigung",
+    "settings": "Einstellungen"
+  },
+  "buttons": {
+    "continue": "Weiter",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "skip": "Überspringen",
+    "undo": "Rückgängig",
+    "next": "Weiter",
+    "back": "Zurück",
+    "save": "Speichern",
+    "close": "Schließen"
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolgreich",
+    "photos": "Fotos",
+    "photo": "Foto",
+    "month": "Monat",
+    "months": "Monate",
+    "year": "Jahr",
+    "years": "Jahre",
+    "photoCount": "{{count}} Foto",
+    "photoCount_plural": "{{count}} Fotos"
+  },
+  "permissions": {
+    "welcome": "Willkommen bei PicSwipe!",
+    "photoAccess": "Fotos-Zugriff",
+    "undeterminedMessage": "PicSwipe verwendet den Zugriff auf deine Fotos, um Galerie-Funktionen bereitzustellen (z. B. Organisieren und Speicherplatz sparen). Du entscheidest, ob du fortfahren möchtest. Du kannst dies jederzeit in den Einstellungen ändern.",
+    "deniedMessage": "Der Zugriff auf Fotos wurde deaktiviert. Um PicSwipe vollständig nutzen zu können, kannst du die Berechtigung in den iOS-Einstellungen aktivieren. Verwende dazu den Button unten, um zu den Einstellungen zu gelangen.",
+    "defaultMessage": "Einige Funktionen benötigen Zugriff auf deine Fotos.",
+    "openSettings": "Einstellungen öffnen",
+    "continue": "Weiter"
+  }
+}

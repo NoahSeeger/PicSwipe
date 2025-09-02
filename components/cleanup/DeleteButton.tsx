@@ -5,6 +5,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { DeletePreviewModal } from "./DeletePreviewModal";
 import { PhotoToDelete } from "@/hooks/usePhotoManager";
 import * as Haptics from "expo-haptics";
+import { useI18n, useNumberFormat } from "@/hooks/useI18n";
 
 const LONG_PRESS_DURATION = 1500; // 1.5 Sekunden
 
@@ -22,6 +23,8 @@ export function DeleteButton({
   totalSize,
 }: DeleteButtonProps) {
   const { colors } = useTheme();
+  const { t } = useI18n('cleanup');
+  const { formatBytes } = useNumberFormat();
   const [showDeletePreview, setShowDeletePreview] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
   const longPressProgress = useRef(new Animated.Value(0)).current;
@@ -109,10 +112,10 @@ export function DeleteButton({
         >
           <IconSymbol name="trash.fill" size={20} color="#FFFFFF" />
           <Text style={styles.buttonText}>
-            Fotos löschen
+            {t('deleteButton.deletePhotos')}
             {"\n"}
             <Text style={styles.buttonSubtext}>
-              Lang drücken zum sofortigen Löschen
+              {t('deleteButton.longPressHint')}
             </Text>
           </Text>
         </Animated.View>

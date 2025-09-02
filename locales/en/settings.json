@@ -1,0 +1,58 @@
+{
+  "title": "Settings",
+  "language": {
+    "title": "Language",
+    "german": "Deutsch",
+    "english": "English"
+  },
+    "subscription": {
+      "title": "Subscription Status",
+      "status": "Status",
+      "product": "Product",
+      "nextPayment": "Next Payment",
+      "active": "Active",
+      "inactive": "Inactive",
+      "noSubscription": "No Subscription",
+      "premium": "Premium",
+      "free": "Free",
+      "upgrade": "Upgrade to Premium",
+      "manage": "Manage Subscription",
+      "restore": "Restore Purchases",
+      "loading": "Loading subscription info...",
+      "products": {
+        "noSubscription": "No Subscription",
+        "proMonthly": "Pro Monthly",
+        "proLifetime": "Pro Lifetime Access"
+      },
+      "alerts": {
+        "information": "Information",
+        "error": "Error",
+        "noPurchasesFound": "No Pro purchases found that could be restored.",
+        "restoreError": "Purchases could not be restored",
+        "manageError": "Subscription management page could not be opened",
+        "subscriptionInfoError": "Subscription information could not be loaded",
+        "manageErrorGeneral": "Subscription management could not be opened"
+      }
+    },
+    "storage": {
+      "title": "Storage",
+      "used": "Used",
+      "free": "Free"
+    },
+    "support": {
+      "title": "Support",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "terms": "Terms of Service"
+    },
+    "debug": {
+      "toggle": "Toggle Debug Info"
+    },
+    "developer": {
+      "title": "Developer Options",
+      "reachSwipeLimit": "Reach swipe limit for paywall test",
+      "showPaywall": "Buy Pro (show paywall)",
+      "reloadSubscription": "Reload subscription status",
+      "debugReceipts": "🐛 Receipt Validation Debug"
+    }
+}

@@ -4,6 +4,7 @@ import { IconSymbol } from "../ui/IconSymbol";
 import { PhotoToDelete } from "../../hooks/usePhotoManager";
 import { DeletePreviewModal } from "./DeletePreviewModal";
 import { useTheme } from "@/components/ThemeProvider";
+import { useI18n, useDateFormat, useNumberFormat } from "@/hooks/useI18n";
 
 type Props = {
   previousPhoto: any;
@@ -19,11 +20,6 @@ type Props = {
   onRemoveFromDeleteList?: (id: string) => void;
 };
 
-const formatFileSize = (bytes: number) => {
-  const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(1)} MB`;
-};
-
 export function HeaderControls({
   previousPhoto,
   photosToDelete,
@@ -35,15 +31,18 @@ export function HeaderControls({
   onRemoveFromDeleteList,
 }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n('cleanup');
+  const { formatBytes } = useNumberFormat();
+  const { formatDate: formatDateI18n } = useDateFormat();
   const [showDeletePreview, setShowDeletePreview] = useState(false);
 
   const formatDate = (date?: Date) => {
     if (!date) return "";
-    return new Intl.DateTimeFormat("de-DE", {
+    return formatDateI18n(date, {
       day: "2-digit",
       month: "long",
       year: "numeric",
-    }).format(date);
+    });
   };
 
   const styles = StyleSheet.create({
@@ -174,7 +173,7 @@ export function HeaderControls({
                 </View>
                 <View style={styles.sizeIndicator}>
                   <Text style={styles.sizeText}>
-                    {formatFileSize(
+                    {formatBytes(
                       photosToDelete.reduce(
                         (acc, photo) => acc + (photo.fileSize || 0),
                         0
@@ -192,7 +191,7 @@ export function HeaderControls({
         visible={showDeletePreview}
         onClose={() => setShowDeletePreview(false)}
         photos={photosToDelete}
-        onRemovePhoto={onRemoveFromDeleteList}
+        onRemovePhoto={onRemoveFromDeleteList || (() => {})}
         onConfirmDelete={async () => {
           const success = await onDelete();
           if (success) {

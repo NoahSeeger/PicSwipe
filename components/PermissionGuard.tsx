@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/components/ThemeProvider";
 import { usePhotoPermission } from "@/components/PhotoPermissionProvider";
+import { useI18n } from "@/hooks/useI18n";
 
 const { width, height } = Dimensions.get("window");
 
@@ -29,6 +30,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   customButtonText,
 }) => {
   const { colors, isDark } = useTheme();
+  const { t } = useI18n('common');
   const {
     permissionStatus,
     isLoading,
@@ -168,11 +170,11 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
 
     switch (permissionStatus) {
       case "undetermined":
-        return "PicSwipe verwendet den Zugriff auf deine Fotos, um Galerie-Funktionen bereitzustellen (z. B. Organisieren und Speicherplatz sparen). Du entscheidest, ob du fortfahren möchtest. Du kannst dies jederzeit in den Einstellungen ändern.";
+        return t('permissions.undeterminedMessage');
       case "denied":
-        return "Der Zugriff auf Fotos wurde deaktiviert. Um PicSwipe vollständig nutzen zu können, kannst du die Berechtigung in den iOS-Einstellungen aktivieren. Verwende dazu den Button unten, um zu den Einstellungen zu gelangen.";
+        return t('permissions.deniedMessage');
       default:
-        return "Einige Funktionen benötigen Zugriff auf deine Fotos.";
+        return t('permissions.defaultMessage');
     }
   };
 
@@ -180,9 +182,9 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     if (customButtonText) return customButtonText;
 
     if (permissionStatus === "denied" && !canRequestPermission) {
-      return "Einstellungen öffnen";
+      return t('permissions.openSettings');
     }
-    return "Weiter";
+    return t('permissions.continue');
   };
 
   const handleButtonPress = async () => {
@@ -202,8 +204,8 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
 
         <Text style={styles.title}>
           {permissionStatus === "undetermined"
-            ? "Willkommen bei PicSwipe!"
-            : "Fotos-Zugriff"}
+            ? t('permissions.welcome')
+            : t('permissions.photoAccess')}
         </Text>
 
         <Text style={styles.message}>{getMessage()}</Text>

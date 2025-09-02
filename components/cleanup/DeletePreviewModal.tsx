@@ -14,6 +14,7 @@ import { IconSymbol } from "../ui/IconSymbol";
 import { useTheme } from "@/components/ThemeProvider";
 import { PhotoToDelete } from "../../hooks/usePhotoManager";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useI18n } from "@/hooks/useI18n";
 
 type Props = {
   visible: boolean;
@@ -39,6 +40,7 @@ export function DeletePreviewModal({
 }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useI18n('cleanup');
 
   console.log("Photos in DeletePreviewModal:", photos);
   console.log("Total size:", totalSize);
@@ -49,14 +51,12 @@ export function DeletePreviewModal({
 
   const handlePressDelete = () => {
     Alert.alert(
-      "Fotos löschen",
-      `${photos.length} Foto${photos.length === 1 ? "" : "s"} (${formatFileSize(
-        totalSize
-      )}) löschen?`,
+      t('deletePreview.confirmTitle'),
+      t('deletePreview.confirmMessage'),
       [
-        { text: "Abbrechen", style: "cancel" },
+        { text: t('deletePreview.cancel'), style: "cancel" },
         {
-          text: "Löschen",
+          text: t('deletePreview.deleteButton'),
           style: "destructive",
           onPress: onConfirmDelete,
         },
@@ -134,13 +134,13 @@ export function DeletePreviewModal({
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <IconSymbol name="xmark" size={24} color="#007AFF" />
           </TouchableOpacity>
-          <Text style={styles.title}>Zu löschende Fotos</Text>
+          <Text style={styles.title}>{t('deletePreview.title')}</Text>
           <Pressable
             onPress={handlePressDelete}
             onLongPress={handleLongPressDelete}
             style={styles.deleteButton}
           >
-            <IconSymbol name="trash" size={24} color={colors.deleteButton} />
+            <IconSymbol name="trash" size={24} color="#FF3B30" />
             <Text style={styles.deleteText}>{formatFileSize(totalSize)}</Text>
           </Pressable>
         </View>
@@ -197,7 +197,7 @@ export function DeletePreviewModal({
                   letterSpacing: 0.5,
                 }}
               >
-                Alle Fotos löschen
+                {t('deletePreview.deleteAll')}
               </Text>
             </Pressable>
           </View>

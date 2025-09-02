@@ -1,9 +1,11 @@
 import { Tabs } from "expo-router";
 import { IconSymbol } from "../../components/ui/IconSymbol";
 import { useTheme } from "@/components/ThemeProvider";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function TabLayout() {
   const { colors, isDark } = useTheme();
+  const { t } = useI18n('common');
 
   return (
     <Tabs
@@ -35,7 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Fotos",
+          title: t('navigation.home'),
           tabBarIcon: ({ color }) => (
             <IconSymbol name="photo.fill" size={24} color={color} />
           ),
@@ -44,7 +46,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="cleanup"
         options={{
-          title: "Bereinigung",
+          title: t('navigation.cleanup'),
           tabBarIcon: ({ color }) => (
             <IconSymbol name="paintbrush.fill" size={24} color={color} />
           ),
@@ -53,7 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="albums"
         options={{
-          title: "Alben",
+          title: t('navigation.albums'),
           tabBarIcon: ({ color }) => (
             <IconSymbol name="rectangle.stack.fill" size={24} color={color} />
           ),
@@ -62,7 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Einstellungen",
+          title: t('navigation.settings'),
           tabBarIcon: ({ color }) => (
             <IconSymbol name="gear" size={24} color={color} />
           ),

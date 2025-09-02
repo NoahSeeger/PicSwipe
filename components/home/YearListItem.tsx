@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from "@/components/ThemeProvider";
+import { useI18n } from "@/hooks/useI18n";
 
 type Props = {
   year: number;
@@ -15,6 +16,7 @@ type Props = {
 
 export function YearListItem({ year, months, totalPhotos, onPress, thumbnailUri }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n('common');
 
   const styles = StyleSheet.create({
     container: {
@@ -65,7 +67,7 @@ export function YearListItem({ year, months, totalPhotos, onPress, thumbnailUri 
       <View style={styles.textContainer}>
         <Text style={styles.year}>{year}</Text>
         <Text style={styles.totalPhotos}>
-          {totalPhotos.toLocaleString()} Fotos
+          {t('common.photoCount', { count: totalPhotos })}
         </Text>
       </View>
       <Ionicons

@@ -3,6 +3,7 @@ import { StyleSheet, View, Pressable, Text, Image } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { router } from "expo-router";
 import { useTheme } from "@/components/ThemeProvider";
+import { useI18n, useDateFormat } from "@/hooks/useI18n";
 
 type Props = {
   month: string;
@@ -22,6 +23,8 @@ export function MonthListItem({
   thumbnailUri,
 }: Props) {
   const { colors } = useTheme();
+  const { t } = useI18n('home');
+  const { getMonthName } = useDateFormat();
 
   const styles = StyleSheet.create({
     container: {
@@ -78,10 +81,10 @@ export function MonthListItem({
       )}
       <View style={styles.textContainer}>
         <Text style={styles.month} numberOfLines={1}>
-          {month} {year}
+          {getMonthName(monthIndex)} {year}
         </Text>
         <Text style={styles.stats} numberOfLines={1}>
-          {photoCount.toLocaleString()} Fotos
+          {t('monthsView.photosCount', { count: photoCount })}
         </Text>
       </View>
       <Ionicons

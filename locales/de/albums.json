@@ -1,0 +1,9 @@
+{
+  "title": "Alben",
+  "noAlbums": "Keine Alben gefunden",
+  "photosCount": "{{count}} Foto", 
+  "photosCount_plural": "{{count}} Fotos",
+  "albumsTitle": "Deine Alben",
+  "loadingAlbums": "Lade Alben...",
+  "selectAlbum": "Album auswählen"
+}

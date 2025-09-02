@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as MediaLibrary from "expo-media-library";
 import { useTheme } from "@/components/ThemeProvider";
+import { useI18n } from "@/hooks/useI18n";
 
 type Album = MediaLibrary.Album & {
   thumbnail?: string;
@@ -21,6 +22,7 @@ export default function AlbumsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useI18n('albums');
   const router = useRouter();
 
   const loadAlbums = async () => {
@@ -121,7 +123,7 @@ export default function AlbumsScreen() {
           {item.title}
         </Text>
         <Text style={[styles.albumCount, { color: colors.secondary }]}>
-          {item.assetCount} Fotos
+          {t('photosCount', { count: item.assetCount })}
         </Text>
       </View>
     </Pressable>
@@ -138,7 +140,7 @@ export default function AlbumsScreen() {
         { paddingTop: insets.top, backgroundColor: colors.background },
       ]}
     >
-      <Text style={[styles.title, { color: colors.text }]}>Deine Alben</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{t('title')}</Text>
       <FlatList
         data={albums}
         renderItem={renderAlbumItem}

@@ -5,6 +5,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { formatBytes } from "@/utils/formatBytes";
 import { PhotoToDelete } from "@/hooks/usePhotoManager";
 import { DeleteButton } from "./DeleteButton";
+import { useI18n, useNumberFormat } from "@/hooks/useI18n";
 
 type MonthCompleteScreenProps = {
   month: string;
@@ -34,6 +35,8 @@ export function MonthCompleteScreen({
   uniqueMonthsCount,
 }: MonthCompleteScreenProps) {
   const { colors } = useTheme();
+  const { t } = useI18n('cleanup');
+  const { formatBytes } = useNumberFormat();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -44,10 +47,10 @@ export function MonthCompleteScreen({
           color={colors.primary}
         />
         <Text style={[styles.title, { color: colors.text }]}>
-          Monat durchgearbeitet!
+          {t('monthComplete.title')}
         </Text>
         <Text style={[styles.subtitle, { color: colors.secondary }]}>
-          Du hast {month} {year} sortiert
+          {t('monthComplete.subtitle', { month, year })}
         </Text>
 
         <View style={[styles.statsContainer, { backgroundColor: colors.card }]}>
@@ -57,8 +60,8 @@ export function MonthCompleteScreen({
             </Text>
             <Text style={[styles.statLabel, { color: colors.secondary }]}>
               {(uniqueMonthsCount && uniqueMonthsCount > 1)
-                ? `Fotos aus ${uniqueMonthsCount} Monaten` 
-                : 'Fotos zum Löschen'
+                ? t('monthComplete.stats.photosFromMonths', { count: uniqueMonthsCount })
+                : t('monthComplete.stats.photosToDelete')
               }
             </Text>
           </View>
@@ -68,7 +71,7 @@ export function MonthCompleteScreen({
               {formatBytes(totalSize)}
             </Text>
             <Text style={[styles.statLabel, { color: colors.secondary }]}>
-              Speicherplatz
+              {t('monthComplete.stats.storageSpace')}
             </Text>
           </View>
         </View>
@@ -89,7 +92,10 @@ export function MonthCompleteScreen({
               onPress={onContinue}
             >
               <Text style={[styles.buttonText, { color: colors.text }]}> 
-                {nextMonthLabel ? `Weiter zu ${nextMonthLabel}` : 'Weiter zum nächsten Monat'}
+                {nextMonthLabel 
+                  ? t('monthComplete.continueToNext', { nextMonth: nextMonthLabel })
+                  : t('monthComplete.allMonthsComplete')
+                }
               </Text>
             </Pressable>
           )}
