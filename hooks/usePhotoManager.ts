@@ -541,6 +541,29 @@ export const usePhotoManager = () => {
     }
   };
 
+  // Neue Funktion: Berechne den nächsten Monat als formatierten String
+  const getNextMonthLabel = useCallback(async (): Promise<string | null> => {
+    if (!currentMonth || isLastMonth) {
+      return null;
+    }
+
+    const startOfCurrentMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      1,
+      0,
+      0,
+      0
+    );
+
+    const nextMonth = await findPreviousMonthWithPhotos(startOfCurrentMonth);
+    if (!nextMonth) {
+      return null;
+    }
+
+    return `${new Intl.DateTimeFormat("de-DE", { month: "long" }).format(nextMonth)} ${nextMonth.getFullYear()}`;
+  }, [currentMonth, isLastMonth, findPreviousMonthWithPhotos]);
+
   const currentPhoto = monthPhotos[currentIndex];
   const nextPhotos = monthPhotos.slice(currentIndex + 1, currentIndex + 3);
   const progress = {
@@ -568,5 +591,6 @@ export const usePhotoManager = () => {
     setInitialMonth,
     isLastMonth,
     currentAlbumTitle,
+    getNextMonthLabel, // Neue Funktion exportieren
   };
 };

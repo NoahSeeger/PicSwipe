@@ -16,6 +16,7 @@ type MonthCompleteScreenProps = {
   photos: PhotoToDelete[];
   onRemovePhoto: (id: string) => void;
   isLastMonth: boolean;
+  nextMonthLabel?: string;
 };
 
 export function MonthCompleteScreen({
@@ -28,6 +29,7 @@ export function MonthCompleteScreen({
   photos,
   onRemovePhoto,
   isLastMonth,
+  nextMonthLabel,
 }: MonthCompleteScreenProps) {
   const { colors } = useTheme();
 
@@ -81,8 +83,8 @@ export function MonthCompleteScreen({
               ]}
               onPress={onContinue}
             >
-              <Text style={[styles.buttonText, { color: colors.text }]}>
-                Weiter zum nächsten Monat
+              <Text style={[styles.buttonText, { color: colors.text }]}> 
+                {nextMonthLabel ? `Weiter zu ${nextMonthLabel}` : 'Weiter zum nächsten Monat'}
               </Text>
             </Pressable>
           )}

@@ -22,6 +22,9 @@ import { LoadingScreen } from "@/components/cleanup/LoadingScreen";
 import { useLayoutEffect } from "react";
 
 export default function CleanupScreen() {
+  // State für das nächste Monats-Label
+  const [nextMonthLabel, setNextMonthLabel] = useState<string | undefined>(undefined);
+  
   // Hooks & State
   const { year, month, albumId } = useLocalSearchParams<{
     year: string;
@@ -83,6 +86,7 @@ export default function CleanupScreen() {
     setInitialMonth,
     isLastMonth,
     currentAlbumTitle,
+    getNextMonthLabel, // Neue Funktion
   } = usePhotoManager();
 
   const { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes, refreshProStatus } = useSwipeLimit();
@@ -154,6 +158,15 @@ export default function CleanupScreen() {
 
     loadPhotos();
   }, [year, month, albumId]);
+
+  // Berechne das Label für den nächsten Monat nur wenn der Monat abgeschlossen ist
+  useEffect(() => {
+    if (isMonthComplete && !albumId && !isLastMonth) {
+      getNextMonthLabel().then(label => setNextMonthLabel(label || undefined));
+    } else {
+      setNextMonthLabel(undefined);
+    }
+  }, [isMonthComplete, albumId, isLastMonth, getNextMonthLabel]);
 
   // Styles mit Theme-Farben
   const styles = StyleSheet.create({
@@ -282,6 +295,7 @@ export default function CleanupScreen() {
         photos={photosToDelete}
         onRemovePhoto={removeFromDeleteList}
         isLastMonth={isLastMonth}
+        nextMonthLabel={nextMonthLabel}
       />
     );
   }
