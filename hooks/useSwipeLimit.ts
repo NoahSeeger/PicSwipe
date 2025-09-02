@@ -13,38 +13,25 @@ export const useSwipeLimit = () => {
   // Pro-Status mit verbesserter Receipt Validation neu laden
   const refreshProStatus = async () => {
     console.log('[SwipeLimit] Aktualisiere Pro-Status...');
-    
+
     const result = await getCustomerInfoWithFallback();
-    
+
     if (result.success && result.customerInfo) {
       const isProActive = result.customerInfo.entitlements.active.pro != null;
       setIsPro(isProActive);
-      
+
       console.log('[SwipeLimit] Pro-Status aktualisiert:', {
         isPro: isProActive,
-        wasFromSandbox: result.wasFromSandbox,
         activeEntitlements: Object.keys(result.customerInfo.entitlements.active)
       });
-      
+
       return isProActive;
     } else {
       console.error('[SwipeLimit] Pro-Status konnte nicht geladen werden:', result.error);
-      
-      // Fallback: versuche die normale API
-      try {
-        const info = await Purchases.getCustomerInfo();
-        const isProActive = info.entitlements.active.pro != null;
-        setIsPro(isProActive);
-        return isProActive;
-      } catch (error) {
-        console.error('[SwipeLimit] Auch Fallback fehlgeschlagen:', error);
-        // Bei Fehlern Pro-Status nicht ändern
-        return isPro;
-      }
+      // Bei Fehlern Pro-Status nicht ändern
+      return isPro;
     }
-  };
-
-  // Swipes und Pro-Status laden
+  };  // Swipes und Pro-Status laden
   const loadSwipes = async () => {
     const today = new Date().toDateString();
     const storedDate = await AsyncStorage.getItem("swipe_date");

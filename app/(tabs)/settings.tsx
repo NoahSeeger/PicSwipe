@@ -374,13 +374,13 @@ export default function SettingsScreen() {
               )}
               
               <TouchableOpacity style={styles.manageButton} onPress={manageSubscription}>
-                <Text style={styles.manageButtonText}>Abo verwalten</Text>
+                <Text style={styles.manageButtonText}>{t('settings:subscription.manage')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.manageButton]} 
                 onPress={restorePurchases}>
-                <Text style={styles.manageButtonText}>Käufe wiederherstellen</Text>
+                <Text style={styles.manageButtonText}>{t('settings:subscription.restore')}</Text>
               </TouchableOpacity>
             </View>
           </>

@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -11,13 +10,17 @@ import { StatusBar } from "expo-status-bar";
 import { Appearance } from "react-native";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { PhotoPermissionProvider } from "@/components/PhotoPermissionProvider";
-import { getRevenueCatApiKey, getReceiptValidationInfo } from "@/constants/RevenueCatConfig";
-import '@/i18n'; // i18n initialisieren
+import { configureRevenueCat } from "@/constants/RevenueCatConfig";
+import '@/i18n';
+
+// RevenueCat SOFORT konfigurieren, bevor React-Komponenten geladen werden
+configureRevenueCat();
 
 export default function RootLayout() {
   const router = useRouter();
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
   const { colors } = useTheme();
+  
   useEffect(() => {
     const checkFirstLaunch = async () => {
       try {
@@ -33,29 +36,6 @@ export default function RootLayout() {
         console.error("Error checking first launch:", error);
       }
     };
-
-    // Konfiguriere RevenueCat mit verbesserter Receipt Validation
-    const validationInfo = getReceiptValidationInfo();
-    console.log('[RevenueCat] Konfiguration:', validationInfo);
-    
-    if (__DEV__) {
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-    } else {
-      Purchases.setLogLevel(LOG_LEVEL.ERROR);
-    }
-
-    // Verwende die umgebungsspezifische API Key Konfiguration
-    const apiKey = getRevenueCatApiKey();
-    console.log(`[RevenueCat] Verwende API Key für ${Platform.OS}: ${apiKey.substring(0, 10)}...`);
-    
-    try {
-      Purchases.configure({ apiKey });
-      
-      // Debugging-Informationen loggen
-      console.log('[RevenueCat] Erfolgreich konfiguriert für Receipt Validation');
-    } catch (error) {
-      console.error('[RevenueCat] Konfigurationsfehler:', error);
-    }
 
     checkFirstLaunch();
   }, []);

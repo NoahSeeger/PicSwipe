@@ -1,43 +1,19 @@
-// constants/RevenueCatConfig.ts
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
-// Bestimme ob wir in Production sind basierend auf __DEV__ und anderen Faktoren
-const isProduction = !__DEV__;
+// RevenueCat API Keys - beide Plattformen verwenden momentan den gleichen Key
+const REVENUECAT_API_KEY = "appl_AfqyHTRArOyTHiRDAvgWKmWqTWM";
 
-// RevenueCat API Keys für verschiedene Umgebungen
-const REVENUECAT_CONFIG = {
-  ios: {
-    development: "appl_AfqyHTRArOyTHiRDAvgWKmWqTWM", // Dein aktueller iOS Key
-    production: "appl_AfqyHTRArOyTHiRDAvgWKmWqTWM"   // Sollte der gleiche sein für iOS
-  },
-  android: {
-    development: "goog_YourDevelopmentAndroidKey",    // Ersetze mit deinem echten Android Development Key
-    production: "goog_YourProductionAndroidKey"       // Ersetze mit deinem echten Android Production Key
+/**
+ * Konfiguriert RevenueCat einmalig beim App-Start
+ * Muss vor allen React-Komponenten aufgerufen werden
+ */
+export const configureRevenueCat = (): void => {
+  try {
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+    Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    console.log(`[RevenueCat] Konfiguriert für ${Platform.OS} mit Key: ${REVENUECAT_API_KEY.substring(0, 10)}...`);
+  } catch (error) {
+    console.error('[RevenueCat] Konfigurationsfehler:', error);
   }
-};
-
-export const getRevenueCatApiKey = (): string => {
-  const environment = isProduction ? 'production' : 'development';
-  
-  if (Platform.OS === 'ios') {
-    return REVENUECAT_CONFIG.ios[environment];
-  } else {
-    return REVENUECAT_CONFIG.android[environment];
-  }
-};
-
-export const isProductionBuild = (): boolean => {
-  return isProduction;
-};
-
-// Diese Funktion hilft bei der Debugging von Receipt Validation Problemen
-export const getReceiptValidationInfo = () => {
-  return {
-    platform: Platform.OS,
-    isProduction: isProduction,
-    isDev: __DEV__,
-    appOwnership: Constants.appOwnership,
-    apiKey: getRevenueCatApiKey()
-  };
 };
