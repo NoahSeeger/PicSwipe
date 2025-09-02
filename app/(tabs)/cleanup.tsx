@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { View, StyleSheet, Modal, Linking, Text } from "react-native";
 import RevenueCatUI from "react-native-purchases-ui";
 import { useLocalSearchParams } from "expo-router";
@@ -19,6 +19,8 @@ import { MonthCompleteScreen } from "@/components/cleanup/MonthCompleteScreen";
 import { AlbumCompleteScreen } from "@/components/cleanup/AlbumCompleteScreen";
 import { LoadingScreen } from "@/components/cleanup/LoadingScreen";
 
+import { useLayoutEffect } from "react";
+
 export default function CleanupScreen() {
   // Hooks & State
   const { year, month, albumId } = useLocalSearchParams<{
@@ -30,6 +32,38 @@ export default function CleanupScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const router = useRouter();
+  const navigation = useNavigation();
+
+  // Deaktiviere Swipe-Back-Geste explizit für diesen Screen
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      gestureEnabled: false,
+      swipeEnabled: false,
+    });
+    
+    // Zusätzlich: Deaktiviere die Geste für den gesamten Parent-Navigator
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        gestureEnabled: false,
+        swipeEnabled: false,
+      });
+    }
+    
+    return () => {
+      // Cleanup: Aktiviere die Gesten wieder beim Verlassen
+      navigation.setOptions({
+        gestureEnabled: true,
+        swipeEnabled: true,
+      });
+      if (parent) {
+        parent.setOptions({
+          gestureEnabled: true,
+          swipeEnabled: true,
+        });
+      }
+    };
+  }, [navigation]);
 
   const {
     currentPhoto,
