@@ -11,6 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { Appearance } from "react-native";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { PhotoPermissionProvider } from "@/components/PhotoPermissionProvider";
+import { getRevenueCatApiKey, getReceiptValidationInfo } from "@/constants/RevenueCatConfig";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -32,13 +33,27 @@ export default function RootLayout() {
       }
     };
 
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-    if (Platform.OS === "ios") {
-      Purchases.configure({ apiKey: "appl_AfqyHTRArOyTHiRDAvgWKmWqTWM" });
-    } else if (Platform.OS === "android") {
-      Purchases.configure({ apiKey: "appl_AfqyHTRArOyTHiRDAvgWKmWqTWM" });
-      // Optional: falls du Amazon Support aktivieren willst
-      // Purchases.configure({ apiKey: "<revenuecat_project_amazon_api_key>", useAmazon: true });
+    // Konfiguriere RevenueCat mit verbesserter Receipt Validation
+    const validationInfo = getReceiptValidationInfo();
+    console.log('[RevenueCat] Konfiguration:', validationInfo);
+    
+    if (__DEV__) {
+      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+    } else {
+      Purchases.setLogLevel(LOG_LEVEL.ERROR);
+    }
+
+    // Verwende die umgebungsspezifische API Key Konfiguration
+    const apiKey = getRevenueCatApiKey();
+    console.log(`[RevenueCat] Verwende API Key für ${Platform.OS}: ${apiKey.substring(0, 10)}...`);
+    
+    try {
+      Purchases.configure({ apiKey });
+      
+      // Debugging-Informationen loggen
+      console.log('[RevenueCat] Erfolgreich konfiguriert für Receipt Validation');
+    } catch (error) {
+      console.error('[RevenueCat] Konfigurationsfehler:', error);
     }
 
     checkFirstLaunch();

@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SWIPE_LIMIT, useSwipeLimit } from "@/hooks/useSwipeLimit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/components/ThemeProvider";
+import { getCustomerInfoWithFallback, restorePurchasesWithFallback, debugReceiptValidation } from "@/utils/receiptValidation";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -40,8 +41,31 @@ export default function SettingsScreen() {
     }
   };
 
+  // Debug-Funktion für Receipt Validation
+  const debugReceipts = async () => {
+    try {
+      const debugInfo = await debugReceiptValidation();
+      
+      const message = JSON.stringify(debugInfo, null, 2);
+      Alert.alert("Receipt Validation Debug", message);
+      
+      console.log('[Settings] Receipt Debug Info:', debugInfo);
+    } catch (error) {
+      Alert.alert("Debug Fehler", error?.toString() || "Unbekannter Fehler");
+    }
+  };
+
   // Button-Handler für Paywall
   const showPaywall = async () => {
+    // try {
+    //   const offerings = await Purchases.getOfferings();
+    //   if (offerings.current !== null && offerings.current.availablePackages.length !== 0) {
+    //     // Display packages for sale
+    //     console.log('[Settings] Available packages:', offerings.current.availablePackages);
+    //   }
+    // } catch (e) {
+    //   console.error('[Settings] Error showing paywall:', e);
+    // }
     try {
       await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: "pro",
@@ -54,21 +78,26 @@ export default function SettingsScreen() {
     }
   };
   
-  // Käufe wiederherstellen-Funktion
+  // Käufe wiederherstellen-Funktion mit verbesserter Receipt Validation
   const restorePurchases = async () => {
     try {
       setLoading(true);
-      // RevenueCat's Methode zum Wiederherstellen von Käufen
-      const customerInfo = await Purchases.restorePurchases();
+      console.log('[Settings] Stelle Käufe wieder her...');
       
-      // Aktualisiere Abo-Status nach Wiederherstellung
-      await loadSubscriptionInfo();
+      const result = await restorePurchasesWithFallback();
       
-      // Zeige Erfolgs- oder Info-Meldung
-      if (customerInfo.entitlements.active["pro"]) {
-        Alert.alert("Erfolg", "Pro-Zugang wurde wiederhergestellt!");
+      if (result.success && result.customerInfo) {
+        // Aktualisiere Abo-Status nach Wiederherstellung
+        await loadSubscriptionInfo();
+        
+        // Zeige Erfolgs- oder Info-Meldung
+        if (result.customerInfo.entitlements.active["pro"]) {
+          Alert.alert("Erfolg", "Pro-Zugang wurde wiederhergestellt!");
+        } else {
+          Alert.alert("Information", "Keine Pro-Käufe gefunden, die wiederhergestellt werden könnten.");
+        }
       } else {
-        Alert.alert("Information", "Keine Pro-Käufe gefunden, die wiederhergestellt werden könnten.");
+        Alert.alert("Fehler", `Käufe konnten nicht wiederhergestellt werden: ${result.error}`);
       }
     } catch (e: any) {
       const msg = typeof e === "object" && e && "message" in e ? (e as any).message : String(e);
@@ -78,45 +107,59 @@ export default function SettingsScreen() {
     }
   };
 
-  // Lädt Informationen zum Abo aus RevenueCat
+  // Lädt Informationen zum Abo aus RevenueCat mit verbesserter Receipt Validation
   const loadSubscriptionInfo = async () => {
     setLoading(true);
     try {
-      const customerInfo = await Purchases.getCustomerInfo();
+      console.log('[Settings] Lade Abo-Informationen...');
       
-      // Prüfe ob Pro-Entitlement aktiv ist
-      const proEntitlement = customerInfo.entitlements.active["pro"];
-      const isActive = proEntitlement != null;
+      const result = await getCustomerInfoWithFallback();
       
-      // Hole Produktname und Ablaufdatum, falls vorhanden
-      let productName = "Kein Abo";
-      let expirationDate = null;
-      
-      if (isActive && proEntitlement) {
-        // Setze Produktname basierend auf der productIdentifier
-        if (proEntitlement.productIdentifier === "pro_monthly") {
-          productName = "Pro Monatsabo";
-        } else if (proEntitlement.productIdentifier === "pro_lifetime") {
-          productName = "Pro Lebenslanger Zugang";
-        } else {
-          productName = proEntitlement.productIdentifier || "Pro";
+      if (result.success && result.customerInfo) {
+        const customerInfo = result.customerInfo;
+        
+        // Prüfe ob Pro-Entitlement aktiv ist
+        const proEntitlement = customerInfo.entitlements.active["pro"];
+        const isActive = proEntitlement != null;
+        
+        // Hole Produktname und Ablaufdatum, falls vorhanden
+        let productName = "Kein Abo";
+        let expirationDate = null;
+        
+        if (isActive && proEntitlement) {
+          // Setze Produktname basierend auf der productIdentifier
+          if (proEntitlement.productIdentifier === "pro_monthly") {
+            productName = "Pro Monatsabo";
+          } else if (proEntitlement.productIdentifier === "pro_lifetime") {
+            productName = "Pro Lebenslanger Zugang";
+          } else {
+            productName = proEntitlement.productIdentifier || "Pro";
+          }
+          
+          // Ablaufdatum (null bei lifetime)
+          if (proEntitlement.expirationDate) {
+            // Convert the ISO string to a Date
+            expirationDate = new Date(proEntitlement.expirationDate);
+          }
         }
         
-        // Ablaufdatum (null bei lifetime)
-        if (proEntitlement.expirationDate) {
-          // Convert the ISO string to a Date
-          expirationDate = new Date(proEntitlement.expirationDate);
+        setSubscription({
+          isActive,
+          productName,
+          expirationDate
+        });
+        
+        if (result.wasFromSandbox) {
+          console.log('[Settings] Abo-Info aus Sandbox-Fallback geladen');
         }
+        
+      } else {
+        console.error('[Settings] Fehler beim Laden der Abo-Informationen:', result.error);
+        Alert.alert("Fehler", `Abo-Informationen konnten nicht geladen werden: ${result.error}`);
       }
       
-      setSubscription({
-        isActive,
-        productName,
-        expirationDate
-      });
-      
     } catch (error) {
-      console.error("Fehler beim Laden der Abo-Informationen:", error);
+      console.error("Unerwarteter Fehler beim Laden der Abo-Informationen:", error);
       Alert.alert("Fehler", "Abo-Informationen konnten nicht geladen werden");
     } finally {
       setLoading(false);
@@ -296,6 +339,9 @@ export default function SettingsScreen() {
           </Text>
           <Text style={styles.button} onPress={loadSubscriptionInfo}>
             Abo-Status neu laden
+          </Text>
+          <Text style={[styles.button, { backgroundColor: colors.primary }]} onPress={debugReceipts}>
+            🐛 Receipt Validation Debug
           </Text>
         </View>
       </View>
