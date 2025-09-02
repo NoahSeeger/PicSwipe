@@ -94,7 +94,6 @@ export function HeaderControls({
       position: "absolute",
       top: -5,
       right: -5,
-      backgroundColor: colors.deleteButton,
       borderRadius: 12,
       minWidth: 24,
       height: 24,
@@ -128,7 +127,7 @@ export function HeaderControls({
     },
     sizeText: {
       fontSize: 12,
-      color: colors.deleteButton,
+      color: colors.text,
       fontWeight: "500",
     },
   });
@@ -164,7 +163,7 @@ export function HeaderControls({
               size={24}
               color={
                 photosToDelete.length > 0
-                  ? colors.deleteButton
+                  ? colors.primary
                   : colors.secondary
               }
             />
