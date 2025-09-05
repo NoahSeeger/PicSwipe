@@ -48,7 +48,7 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <PhotoPermissionProvider>
-            <PermissionGuard customButtonText="Weiter">
+            <PermissionGuard>
               <Stack
                 screenOptions={{
                   headerShown: false,

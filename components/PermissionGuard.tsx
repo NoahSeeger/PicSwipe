@@ -219,7 +219,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
                 color={colors.primary}
               />
               <Text style={styles.featureText}>
-                Fotos sicher und lokal verwalten
+                {t('permissions.features.managePhotos')}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -229,7 +229,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
                 color={colors.primary}
               />
               <Text style={styles.featureText}>
-                Speicherplatz durch Duplikate sparen
+                {t('permissions.features.saveSpace')}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -239,7 +239,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
                 color={colors.primary}
               />
               <Text style={styles.featureText}>
-                Galerie schnell organisieren
+                {t('permissions.features.organizeGallery')}
               </Text>
             </View>
           </View>

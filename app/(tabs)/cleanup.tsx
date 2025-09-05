@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 // Hooks
 import { usePhotoManager } from "@/hooks/usePhotoManager";
 import { useSwipeLimit } from "@/hooks/useSwipeLimit";
+import { useReviewPrompt } from "@/hooks/useReviewPrompt";
 import { useI18n } from "@/hooks/useI18n";
 import { useDateFormat } from "@/hooks/useI18n";
 
@@ -96,6 +97,9 @@ export default function CleanupScreen() {
 
   const { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes, refreshProStatus } = useSwipeLimit();
 
+  // Direktes Review-System: Nach 10 Swipes den nativen Prompt anzeigen
+  useReviewPrompt(swipes);
+
   // Synchronisiere Swipes bei jedem Focus (z.B. nach Settings-Änderung)
   useFocusEffect(
     React.useCallback(() => {
@@ -114,7 +118,7 @@ export default function CleanupScreen() {
         // result kann z.B. "PURCHASED", "RESTORED", "CANCELLED" sein
         if (result === "PURCHASED" || result === "RESTORED") {
           await refreshProStatus(); // Pro-Status sofort aktualisieren
-          incrementSwipe();
+          await incrementSwipe();
           moveToNextPhoto(direction === "left");
         }
       } catch (e: any) {
@@ -127,7 +131,7 @@ export default function CleanupScreen() {
         }
       }
     } else {
-      incrementSwipe();
+      await incrementSwipe();
       moveToNextPhoto(direction === "left");
     }
   };

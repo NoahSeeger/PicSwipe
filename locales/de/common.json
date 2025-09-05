@@ -36,6 +36,11 @@
     "deniedMessage": "Der Zugriff auf Fotos wurde deaktiviert. Um PicSwipe vollständig nutzen zu können, kannst du die Berechtigung in den iOS-Einstellungen aktivieren. Verwende dazu den Button unten, um zu den Einstellungen zu gelangen.",
     "defaultMessage": "Einige Funktionen benötigen Zugriff auf deine Fotos.",
     "openSettings": "Einstellungen öffnen",
-    "continue": "Weiter"
+    "continue": "Weiter",
+    "features": {
+      "managePhotos": "Fotos sicher und lokal verwalten",
+      "saveSpace": "Speicherplatz durch Duplikate sparen",
+      "organizeGallery": "Galerie schnell organisieren"
+    }
   }
 }

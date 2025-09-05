@@ -30,11 +30,17 @@
     "photoCount_plural": "{{count}} Photos"
   },
   "permissions": {
+    "welcome": "Welcome to Picswipe!",
     "photoAccess": "Photo Access",
     "undeterminedMessage": "PicSwipe uses access to your photos to provide gallery functions (e.g., organizing and saving storage space). You decide whether to continue. You can change this at any time in the settings.",
     "deniedMessage": "Photo access has been disabled. To fully use PicSwipe, you can enable permission in iOS Settings. Use the button below to go to Settings.",
     "defaultMessage": "Some features require access to your photos.",
     "openSettings": "Open Settings",
-    "continue": "Continue"
+    "continue": "Continue",
+    "features": {
+      "managePhotos": "Manage photos securely and locally",
+      "saveSpace": "Save storage space by removing duplicates",
+      "organizeGallery": "Organize gallery quickly"
+    }
   }
 }
