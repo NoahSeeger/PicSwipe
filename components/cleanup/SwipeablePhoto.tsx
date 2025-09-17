@@ -9,10 +9,8 @@ import {
 } from "react-native";
 import {
   PanGestureHandler,
-  PanGestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
 import Animated, {
-  useAnimatedGestureHandler,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -95,36 +93,31 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
     );
   }, [uri]);
 
-  const gestureHandler = useAnimatedGestureHandler<
-    PanGestureHandlerGestureEvent,
-    { startX: number }
-  >({
-    onStart: (_, ctx) => {
+  // Korrekte Gesture Handler Funktion für PanGestureHandler
+  const onGestureEvent = (event: any) => {
+    const { translationX, velocityX, state } = event.nativeEvent;
+
+    if (state === 2) { // ACTIVE
       if (isAnimatingRef.current) return;
-      ctx.startX = translateX.value;
-    },
-    onActive: (event, ctx) => {
-      if (isAnimatingRef.current) return;
-      translateX.value = ctx.startX + event.translationX;
+      translateX.value = translationX;
       rotation.value = interpolate(
-        event.translationX,
+        translationX,
         [-width, 0, width],
         [-15, 0, 15]
       );
-    },
-    onEnd: (event) => {
+    } else if (state === 5) { // END
       if (isAnimatingRef.current) return;
 
-      if (Math.abs(event.translationX) > SWIPE_THRESHOLD) {
+      if (Math.abs(translationX) > SWIPE_THRESHOLD) {
         isAnimatingRef.current = true;
-        const direction = event.translationX > 0 ? "right" : "left";
+        const direction = translationX > 0 ? "right" : "left";
 
         runOnJS(onSwipe)(direction);
 
         translateX.value = withSpring(
           direction === "right" ? width * 1.5 : -width * 1.5,
           {
-            velocity: event.velocityX,
+            velocity: velocityX,
             stiffness: 200,
             damping: 20,
             overshootClamping: true,
@@ -139,8 +132,8 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
         translateX.value = withSpring(0);
         rotation.value = withSpring(0);
       }
-    },
-  });
+    }
+  };
 
   const mainCardStyle = useAnimatedStyle(() => ({
     transform: [
@@ -201,7 +194,7 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
 
   return (
     <View style={dynamicStyles.container}>
-      <PanGestureHandler onGestureEvent={gestureHandler}>
+      <PanGestureHandler onGestureEvent={onGestureEvent}>
         <Animated.View style={[dynamicStyles.photoWrapper, mainCardStyle]}>
           <TouchableOpacity onPress={onPress} activeOpacity={1}>
             <Image
