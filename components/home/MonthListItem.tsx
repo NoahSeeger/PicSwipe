@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View, Pressable, Text, Image } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { router } from "expo-router";
 import { useTheme } from "@/components/ThemeProvider";
 import { useI18n, useDateFormat } from "@/hooks/useI18n";
+import { useProgress } from "@/hooks/useProgress";
 
 type Props = {
   month: string;
@@ -25,6 +26,16 @@ export function MonthListItem({
   const { colors } = useTheme();
   const { t } = useI18n('home');
   const { getMonthName } = useDateFormat();
+  const { isMonthCompleted } = useProgress();
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  useEffect(() => {
+    const checkCompletion = async () => {
+      const completed = await isMonthCompleted(year, monthIndex);
+      setIsCompleted(completed);
+    };
+    checkCompletion();
+  }, [year, monthIndex, isMonthCompleted]);
 
   const styles = StyleSheet.create({
     container: {
@@ -55,6 +66,18 @@ export function MonthListItem({
     stats: {
       fontSize: 15,
       color: colors.secondary,
+    },
+    completionContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 8,
+    },
+    completionBadge: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     chevron: {
       marginLeft: 8,
@@ -87,6 +110,31 @@ export function MonthListItem({
           {t('monthsView.photosCount', { count: photoCount })}
         </Text>
       </View>
+      
+      {/* Completion Status */}
+      <View style={styles.completionContainer}>
+        <View 
+          style={[
+            styles.completionBadge,
+            {
+              backgroundColor: isCompleted ? colors.primary : 'transparent',
+              borderWidth: isCompleted ? 0 : 2,
+              borderColor: isCompleted ? 'transparent' : colors.border,
+            }
+          ]}
+        >
+          {isCompleted ? (
+            <Ionicons
+              name="checkmark"
+              size={18}
+              color="white"
+            />
+          ) : (
+            <View style={{ width: 18, height: 18 }} />
+          )}
+        </View>
+      </View>
+      
       <Ionicons
         name="chevron-forward"
         size={24}

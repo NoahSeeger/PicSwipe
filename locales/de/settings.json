@@ -53,6 +53,27 @@
       "reachSwipeLimit": "Swipes-Limit für Paywall-Test erreichen",
       "showPaywall": "Pro kaufen (Paywall anzeigen)",
       "reloadSubscription": "Abo-Status neu laden",
-      "debugReceipts": "🐛 Receipt Validation Debug"
+      "debugReceipts": "🐛 Receipt Validation Debug",
+      "resetMonthProgress": {
+        "title": "Monats-Progress zurücksetzen",
+        "message": "Dies entfernt alle Haken bei sortierten Monaten. Fotos werden nicht gelöscht. Bist du sicher?",
+        "confirm": "Zurücksetzen",
+        "success": "Erfolg",
+        "successMessage": "Aller Monats-Progress wurde zurückgesetzt."
+      },
+      "resetAlbumProgress": {
+        "title": "Album-Progress zurücksetzen",
+        "message": "Dies entfernt alle Haken bei sortierten Alben. Fotos werden nicht gelöscht. Bist du sicher?",
+        "confirm": "Zurücksetzen",
+        "success": "Erfolg",
+        "successMessage": "Aller Album-Progress wurde zurückgesetzt."
+      },
+      "resetAllProgress": {
+        "title": "Kompletten Progress zurücksetzen",
+        "message": "Dies entfernt ALLEN Progress (Monate & Alben). Fotos werden nicht gelöscht. Diese Aktion kann nicht rückgängig gemacht werden!",
+        "confirm": "Alles zurücksetzen",
+        "success": "Erfolg",
+        "successMessage": "Aller Progress wurde komplett zurückgesetzt."
+      }
     }
 }

@@ -16,6 +16,8 @@ import { YearListSkeleton } from "@/components/home/YearListSkeleton";
 import { router } from "expo-router";
 import { useTheme } from "@/components/ThemeProvider";
 import { useI18n } from "@/hooks/useI18n";
+import { useProgress } from "@/hooks/useProgress";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen() {
   const { yearData, isLoading, loadingState, progress, refreshData } = useMonthData();
@@ -23,6 +25,16 @@ export default function HomeScreen() {
   const totalPhotos = yearData.reduce((sum, year) => sum + year.totalPhotos, 0);
   const { colors, isDark } = useTheme();
   const { t } = useI18n('home');
+  const { refreshProgress } = useProgress();
+  const [refreshKey, setRefreshKey] = React.useState(0);
+  
+  // Refresh progress when returning to this view
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshProgress();
+      setRefreshKey(prev => prev + 1);
+    }, [refreshProgress])
+  );
   
   // Animation für den Fortschrittsbalken
   const progressAnim = React.useRef(new Animated.Value(0)).current;
@@ -140,7 +152,7 @@ export default function HomeScreen() {
           style={styles.scrollView}
           contentContainerStyle={{
             paddingTop: insets.top + 8,
-            paddingBottom: insets.bottom + 20,
+            paddingBottom: insets.bottom + 80, // Tab bar height
           }}
           refreshControl={
             <RefreshControl
@@ -192,7 +204,7 @@ export default function HomeScreen() {
               <>
                 {yearData.map((year) => (
                   <YearListItem
-                    key={year.year}
+                    key={`${year.year}-${refreshKey}`}
                     year={year.year}
                     months={year.months.map((m) => ({ month: m.monthIndex + 1 }))}
                     totalPhotos={year.totalPhotos}

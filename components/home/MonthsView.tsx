@@ -9,6 +9,8 @@ import { useRouter } from "expo-router";
 import { useTheme } from "@/components/ThemeProvider";
 import { useMonthThumbnails } from "@/hooks/useMonthThumbnails";
 import { useI18n } from "@/hooks/useI18n";
+import { useProgress } from "@/hooks/useProgress";
+import { useFocusEffect } from "@react-navigation/native";
 
 type Props = {
   year: number;
@@ -21,6 +23,16 @@ export function MonthsView({ year, onClose }: Props) {
   const { colors } = useTheme();
   const { t } = useI18n('home');
   const { months, isLoading, loadingState, progress } = useMonthThumbnails(year);
+  const { refreshProgress } = useProgress();
+  const [refreshKey, setRefreshKey] = React.useState(0);
+  
+  // Refresh progress when returning to this view
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshProgress();
+      setRefreshKey(prev => prev + 1);
+    }, [refreshProgress])
+  );
   
   // Animation für den Fortschrittsbalken
   const progressAnim = React.useRef(new Animated.Value(0)).current;
@@ -118,7 +130,7 @@ export function MonthsView({ year, onClose }: Props) {
         data={months}
         renderItem={({ item }) => (
           <MonthListItem
-            key={item.month}
+            key={`${item.month}-${refreshKey}`}
             month={item.month}
             year={year}
             photoCount={item.photoCount}

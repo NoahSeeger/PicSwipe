@@ -13,6 +13,7 @@ import { useSwipeLimit } from "@/hooks/useSwipeLimit";
 import { useReviewPrompt } from "@/hooks/useReviewPrompt";
 import { useI18n } from "@/hooks/useI18n";
 import { useDateFormat } from "@/hooks/useI18n";
+import { useProgress } from "@/hooks/useProgress";
 
 // Components
 import { HeaderControls } from "@/components/cleanup/HeaderControls";
@@ -96,9 +97,32 @@ export default function CleanupScreen() {
   } = usePhotoManager();
 
   const { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes, refreshProStatus } = useSwipeLimit();
+  const { isMonthCompleted } = useProgress();
 
   // Direktes Review-System: Nach 10 Swipes den nativen Prompt anzeigen
   useReviewPrompt(swipes);
+
+  // Function to find the newest uncompleted month
+  const findNewestUncompletedMonth = async (): Promise<{year: number, month: number}> => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // Start from current month and go backwards
+    for (let year = currentYear; year >= currentYear - 5; year--) { // Check last 5 years
+      const maxMonth = year === currentYear ? currentMonth : 11;
+      
+      for (let month = maxMonth; month >= 0; month--) {
+        const isCompleted = await isMonthCompleted(year, month);
+        if (!isCompleted) {
+          return { year, month };
+        }
+      }
+    }
+
+    // Fallback to current month if all are completed (shouldn't happen in practice)
+    return { year: currentYear, month: currentMonth };
+  };
 
   // Synchronisiere Swipes bei jedem Focus (z.B. nach Settings-Änderung)
   useFocusEffect(
@@ -152,10 +176,11 @@ export default function CleanupScreen() {
             eagerLoadCount
           );
         } else {
-          const now = new Date();
+          // Smart navigation: Go to newest uncompleted month
+          const { year: targetYear, month: targetMonth } = await findNewestUncompletedMonth();
           await setInitialMonth(
-            now.getFullYear(),
-            now.getMonth(),
+            targetYear,
+            targetMonth,
             undefined,
             eagerLoadCount
           );
@@ -166,7 +191,7 @@ export default function CleanupScreen() {
     };
 
     loadPhotos();
-  }, [year, month, albumId]);
+  }, [year, month, albumId, isMonthCompleted]);
 
   // Berechne das Label für den nächsten Monat nur wenn der Monat abgeschlossen ist
   useEffect(() => {
@@ -273,6 +298,7 @@ export default function CleanupScreen() {
       return (
         <AlbumCompleteScreen
           albumTitle={currentAlbumTitle || "Unbekanntes Album"}
+          albumId={albumId}
           photosToDelete={photosToDelete.length}
           totalSize={photosToDelete.reduce(
             (acc, photo) => acc + (photo.fileSize || 0),

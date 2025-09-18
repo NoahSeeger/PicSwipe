@@ -27,7 +27,9 @@
     "year": "Jahr",
     "years": "Jahre",
     "photoCount": "{{count}} Foto",
-    "photoCount_plural": "{{count}} Fotos"
+    "photoCount_plural": "{{count}} Fotos",
+    "monthsCompleted": "Monate abgeschlossen",
+    "monthsProgressText": "{{completed}}/{{total}} Monate abgeschlossen"
   },
   "permissions": {
     "welcome": "Willkommen bei PicSwipe!",

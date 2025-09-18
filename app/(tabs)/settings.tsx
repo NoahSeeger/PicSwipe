@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Alert, TouchableOpacity, Linking, ActivityIndicator, Pressable } from "react-native";
+import { View, Text, StyleSheet, Alert, TouchableOpacity, Linking, ActivityIndicator, Pressable, ScrollView } from "react-native";
 import RevenueCatUI from "react-native-purchases-ui";
 import Purchases from "react-native-purchases";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -11,6 +11,7 @@ import { useI18n, useDateFormat } from "@/hooks/useI18n";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { changeLanguage } from "@/i18n";
 import * as Haptics from "expo-haptics";
+import { useProgress } from "@/hooks/useProgress";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -18,6 +19,7 @@ export default function SettingsScreen() {
   const { t, language, isReady } = useI18n('settings');
   const { formatDate } = useDateFormat();
   const { loadSwipes } = useSwipeLimit();
+  const { clearMonthProgress, clearAlbumProgress, clearProgress } = useProgress();
   
   // State für RevenueCat-Informationen
   const [loading, setLoading] = useState(false);
@@ -59,6 +61,85 @@ export default function SettingsScreen() {
     } catch (error) {
       Alert.alert("Debug Fehler", error?.toString() || "Unbekannter Fehler");
     }
+  };
+
+  // Progress Reset Functions
+  const resetMonthProgress = async () => {
+    Alert.alert(
+      t('developer.resetMonthProgress.title'),
+      t('developer.resetMonthProgress.message'),
+      [
+        { text: t('common.cancel'), style: "cancel" },
+        {
+          text: t('developer.resetMonthProgress.confirm'),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearMonthProgress();
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              Alert.alert(
+                t('developer.resetMonthProgress.success'),
+                t('developer.resetMonthProgress.successMessage')
+              );
+            } catch (error) {
+              Alert.alert("Fehler", "Konnte Month Progress nicht zurücksetzen");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const resetAlbumProgress = async () => {
+    Alert.alert(
+      t('developer.resetAlbumProgress.title'),
+      t('developer.resetAlbumProgress.message'),
+      [
+        { text: t('common.cancel'), style: "cancel" },
+        {
+          text: t('developer.resetAlbumProgress.confirm'),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearAlbumProgress();
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              Alert.alert(
+                t('developer.resetAlbumProgress.success'),
+                t('developer.resetAlbumProgress.successMessage')
+              );
+            } catch (error) {
+              Alert.alert("Fehler", "Konnte Album Progress nicht zurücksetzen");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const resetAllProgress = async () => {
+    Alert.alert(
+      t('developer.resetAllProgress.title'),
+      t('developer.resetAllProgress.message'),
+      [
+        { text: t('common.cancel'), style: "cancel" },
+        {
+          text: t('developer.resetAllProgress.confirm'),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearProgress();
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              Alert.alert(
+                t('developer.resetAllProgress.success'),
+                t('developer.resetAllProgress.successMessage')
+              );
+            } catch (error) {
+              Alert.alert("Fehler", "Konnte Progress nicht zurücksetzen");
+            }
+          }
+        }
+      ]
+    );
   };
 
   // Button-Handler für Paywall
@@ -155,10 +236,6 @@ export default function SettingsScreen() {
           expirationDate
         });
         
-        if (result.wasFromSandbox) {
-          console.log('[Settings] Abo-Info aus Sandbox-Fallback geladen');
-        }
-        
       } else {
         console.error('[Settings] Fehler beim Laden der Abo-Informationen:', result.error);
         Alert.alert(t('subscription.alerts.error'), `${t('subscription.alerts.subscriptionInfoError')}: ${result.error}`);
@@ -223,6 +300,7 @@ export default function SettingsScreen() {
       flex: 1,
       padding: 20,
       paddingTop: insets.top,
+      paddingBottom: insets.bottom + 100, // Extra space for tab bar
       backgroundColor: colors.background,
     },
     section: {
@@ -335,7 +413,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.title}>{t('title')}</Text>
       
       {/* Abonnement-Sektion */}
@@ -437,8 +515,17 @@ export default function SettingsScreen() {
           <Text style={[styles.button, { backgroundColor: colors.primary }]} onPress={debugReceipts}>
             🐛 Receipt Validation Debug
           </Text>
+          <Text style={[styles.button, { backgroundColor: '#FF3B30' }]} onPress={resetMonthProgress}>
+            🗑️ Month Progress zurücksetzen
+          </Text>
+          <Text style={[styles.button, { backgroundColor: '#FF3B30' }]} onPress={resetAlbumProgress}>
+            🗑️ Album Progress zurücksetzen
+          </Text>
+          <Text style={[styles.button, { backgroundColor: '#FF3B30' }]} onPress={resetAllProgress}>
+            💥 Kompletten Progress zurücksetzen
+          </Text>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }

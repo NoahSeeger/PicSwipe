@@ -9,12 +9,16 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import * as MediaLibrary from "expo-media-library";
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from "@/components/ThemeProvider";
 import { useI18n } from "@/hooks/useI18n";
+import { useProgress } from "@/hooks/useProgress";
 
 type Album = MediaLibrary.Album & {
   thumbnail?: string;
+  isCompleted?: boolean;
 };
 
 export default function AlbumsScreen() {
@@ -24,6 +28,17 @@ export default function AlbumsScreen() {
   const { colors } = useTheme();
   const { t } = useI18n('albums');
   const router = useRouter();
+  const { isAlbumCompleted, refreshProgress } = useProgress();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Refresh progress when returning to this view
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshProgress();
+      setRefreshKey(prev => prev + 1);
+      loadAlbums(); // Also reload albums to get updated completion status
+    }, [refreshProgress])
+  );
 
   const loadAlbums = async () => {
     try {
@@ -83,7 +98,16 @@ export default function AlbumsScreen() {
       const validAlbums = albumsWithThumbnails.filter(
         (album) => album.assetCount > 0
       );
-      setAlbums(validAlbums);
+
+      // Check completion status for each album
+      const albumsWithCompletion = await Promise.all(
+        validAlbums.map(async (album) => ({
+          ...album,
+          isCompleted: await isAlbumCompleted(album.id)
+        }))
+      );
+
+      setAlbums(albumsWithCompletion);
     } catch (error) {
       console.error("Error loading albums:", error);
     } finally {
@@ -126,6 +150,30 @@ export default function AlbumsScreen() {
           {t('photosCount', { count: item.assetCount })}
         </Text>
       </View>
+      
+      {/* Completion Status */}
+      <View style={styles.completionContainer}>
+        <View 
+          style={[
+            styles.completionBadge,
+            {
+              backgroundColor: item.isCompleted ? colors.primary : 'transparent',
+              borderWidth: item.isCompleted ? 0 : 2,
+              borderColor: item.isCompleted ? 'transparent' : colors.border,
+            }
+          ]}
+        >
+          {item.isCompleted ? (
+            <Ionicons
+              name="checkmark"
+              size={18}
+              color="white"
+            />
+          ) : (
+            <View style={{ width: 18, height: 18 }} />
+          )}
+        </View>
+      </View>
     </Pressable>
   );
 
@@ -144,7 +192,7 @@ export default function AlbumsScreen() {
       <FlatList
         data={albums}
         renderItem={renderAlbumItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.id}-${refreshKey}`}
         contentContainerStyle={styles.list}
         refreshing={isLoading}
         onRefresh={loadAlbums}
@@ -165,6 +213,7 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
+    paddingBottom: 80, // Tab bar height
     gap: 12,
   },
   albumItem: {
@@ -186,6 +235,18 @@ const styles = StyleSheet.create({
   albumInfo: {
     marginLeft: 12,
     flex: 1,
+  },
+  completionContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  completionBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   albumTitle: {
     fontSize: 17,

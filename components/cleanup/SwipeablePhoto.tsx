@@ -8,7 +8,8 @@ import {
   Text,
 } from "react-native";
 import {
-  PanGestureHandler,
+  Gesture,
+  GestureDetector,
 } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
@@ -93,31 +94,30 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
     );
   }, [uri]);
 
-  // Korrekte Gesture Handler Funktion für PanGestureHandler
-  const onGestureEvent = (event: any) => {
-    const { translationX, velocityX, state } = event.nativeEvent;
-
-    if (state === 2) { // ACTIVE
+  // Moderne Gesture API
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
       if (isAnimatingRef.current) return;
-      translateX.value = translationX;
+      translateX.value = event.translationX;
       rotation.value = interpolate(
-        translationX,
+        event.translationX,
         [-width, 0, width],
         [-15, 0, 15]
       );
-    } else if (state === 5) { // END
+    })
+    .onEnd((event) => {
       if (isAnimatingRef.current) return;
 
-      if (Math.abs(translationX) > SWIPE_THRESHOLD) {
+      if (Math.abs(event.translationX) > SWIPE_THRESHOLD) {
         isAnimatingRef.current = true;
-        const direction = translationX > 0 ? "right" : "left";
+        const direction = event.translationX > 0 ? "right" : "left";
 
         runOnJS(onSwipe)(direction);
 
         translateX.value = withSpring(
           direction === "right" ? width * 1.5 : -width * 1.5,
           {
-            velocity: velocityX,
+            velocity: event.velocityX,
             stiffness: 200,
             damping: 20,
             overshootClamping: true,
@@ -132,8 +132,7 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
         translateX.value = withSpring(0);
         rotation.value = withSpring(0);
       }
-    }
-  };
+    });
 
   const mainCardStyle = useAnimatedStyle(() => ({
     transform: [
@@ -194,7 +193,7 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
 
   return (
     <View style={dynamicStyles.container}>
-      <PanGestureHandler onGestureEvent={onGestureEvent}>
+      <GestureDetector gesture={panGesture}>
         <Animated.View style={[dynamicStyles.photoWrapper, mainCardStyle]}>
           <TouchableOpacity onPress={onPress} activeOpacity={1}>
             <Image
@@ -218,7 +217,7 @@ export function SwipeablePhoto({ uri, nextPhotos, onSwipe, onPress }: Props) {
             </Animated.View>
           </TouchableOpacity>
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
     </View>
   );
 }

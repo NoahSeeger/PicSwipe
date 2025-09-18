@@ -5,9 +5,11 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { formatBytes } from "@/utils/formatBytes";
 import { PhotoToDelete } from "@/hooks/usePhotoManager";
 import { DeleteButton } from "./DeleteButton";
+import { useProgress } from "@/hooks/useProgress";
 
 type AlbumCompleteScreenProps = {
   albumTitle: string;
+  albumId: string; // Add albumId prop
   photosToDelete: number;
   totalSize: number;
   onDelete: () => Promise<boolean>;
@@ -18,6 +20,7 @@ type AlbumCompleteScreenProps = {
 
 export function AlbumCompleteScreen({
   albumTitle,
+  albumId,
   photosToDelete,
   totalSize,
   onDelete,
@@ -26,6 +29,24 @@ export function AlbumCompleteScreen({
   onRemovePhoto,
 }: AlbumCompleteScreenProps) {
   const { colors } = useTheme();
+  const { markAlbumCompleted } = useProgress();
+
+  // Mark album as completed when this screen is shown
+  React.useEffect(() => {
+    const markCompleted = async () => {
+      // Calculate total photos processed (photos to delete + photos that were kept)
+      const totalProcessed = photosToDelete + (photos.length - photosToDelete);
+      
+      await markAlbumCompleted(
+        albumId,
+        albumTitle,
+        totalProcessed, // Total photos processed
+        photosToDelete // Photos to be deleted
+      );
+    };
+
+    markCompleted();
+  }, [albumId, albumTitle, photosToDelete, photos.length, markAlbumCompleted]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

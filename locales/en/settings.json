@@ -53,6 +53,27 @@
       "reachSwipeLimit": "Reach swipe limit for paywall test",
       "showPaywall": "Buy Pro (show paywall)",
       "reloadSubscription": "Reload subscription status",
-      "debugReceipts": "🐛 Receipt Validation Debug"
+      "debugReceipts": "🐛 Receipt Validation Debug",
+      "resetMonthProgress": {
+        "title": "Reset Month Progress",
+        "message": "This will remove all completed month checkmarks. Photos won't be deleted. Are you sure?",
+        "confirm": "Reset",
+        "success": "Success",
+        "successMessage": "All month progress has been reset."
+      },
+      "resetAlbumProgress": {
+        "title": "Reset Album Progress",
+        "message": "This will remove all completed album checkmarks. Photos won't be deleted. Are you sure?",
+        "confirm": "Reset",
+        "success": "Success",
+        "successMessage": "All album progress has been reset."
+      },
+      "resetAllProgress": {
+        "title": "Reset All Progress",
+        "message": "This will remove ALL progress (months & albums). Photos won't be deleted. This action cannot be undone!",
+        "confirm": "Reset All",
+        "success": "Success",
+        "successMessage": "All progress has been completely reset."
+      }
     }
 }

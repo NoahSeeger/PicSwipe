@@ -1,18 +1,16 @@
 import React from "react";
 import { StyleSheet, Dimensions, View, TouchableOpacity } from "react-native";
 import {
-  PinchGestureHandler,
-  PanGestureHandler,
+  Gesture,
+  GestureDetector,
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
 import Animated, {
-  useAnimatedGestureHandler,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   runOnJS,
 } from "react-native-reanimated";
-import { ThemedText } from "./ThemedText";
 import { IconSymbol } from "./ui/IconSymbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -32,45 +30,40 @@ export function FullscreenImage({ uri, onClose }: Props) {
   const savedTranslateX = useSharedValue(0);
   const savedTranslateY = useSharedValue(0);
 
-  const pinchHandler = useAnimatedGestureHandler({
-    onStart: (_, ctx: any) => {
-      ctx.startScale = scale.value;
-    },
-    onActive: (event, ctx) => {
-      scale.value = ctx.startScale * event.scale;
-    },
-    onEnd: () => {
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((event) => {
+      scale.value = savedScale.value * event.scale;
+    })
+    .onEnd(() => {
       if (scale.value < 1) {
         scale.value = withSpring(1);
       }
       savedScale.value = scale.value;
-    },
-  });
+    });
 
-  const panHandler = useAnimatedGestureHandler({
-    onStart: (_, ctx: any) => {
-      ctx.startX = translateX.value;
-      ctx.startY = translateY.value;
-    },
-    onActive: (event, ctx) => {
-      translateX.value = ctx.startX + event.translationX;
-      translateY.value = ctx.startY + event.translationY;
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      translateX.value = savedTranslateX.value + event.translationX;
+      translateY.value = savedTranslateY.value + event.translationY;
 
       // Wenn nach oben/unten gewischt wird und das Bild nicht gezoomt ist
       if (scale.value <= 1 && Math.abs(event.translationY) > 100) {
         runOnJS(onClose)();
       }
-    },
-    onEnd: () => {
+    })
+    .onEnd(() => {
       if (scale.value <= 1) {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
       } else {
         savedTranslateX.value = translateX.value;
         savedTranslateY.value = translateY.value;
       }
-    },
-  });
+    });
+
+  const combinedGesture = Gesture.Simultaneous(pinchGesture, panGesture);
 
   const imageStyle = useAnimatedStyle(() => {
     return {
@@ -89,19 +82,17 @@ export function FullscreenImage({ uri, onClose }: Props) {
           <IconSymbol name="xmark" size={24} color="white" />
         </TouchableOpacity>
       </View>
-      <PanGestureHandler onGestureEvent={panHandler}>
+      <GestureDetector gesture={combinedGesture}>
         <Animated.View
           style={[styles.panContainer, { paddingBottom: insets.bottom }]}
         >
-          <PinchGestureHandler onGestureEvent={pinchHandler}>
-            <Animated.Image
-              source={{ uri }}
-              style={[styles.image, imageStyle]}
-              resizeMode="contain"
-            />
-          </PinchGestureHandler>
+          <Animated.Image
+            source={{ uri }}
+            style={[styles.image, imageStyle]}
+            resizeMode="contain"
+          />
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
     </GestureHandlerRootView>
   );
 }

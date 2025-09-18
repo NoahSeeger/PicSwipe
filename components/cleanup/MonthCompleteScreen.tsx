@@ -6,6 +6,7 @@ import { formatBytes } from "@/utils/formatBytes";
 import { PhotoToDelete } from "@/hooks/usePhotoManager";
 import { DeleteButton } from "./DeleteButton";
 import { useI18n, useNumberFormat } from "@/hooks/useI18n";
+import { useProgress } from "@/hooks/useProgress";
 
 type MonthCompleteScreenProps = {
   month: string;
@@ -37,6 +38,47 @@ export function MonthCompleteScreen({
   const { colors } = useTheme();
   const { t } = useI18n('cleanup');
   const { formatBytes } = useNumberFormat();
+  const { markMonthCompleted } = useProgress();
+
+  // Mark month as completed when this screen is shown
+  React.useEffect(() => {
+    const markCompleted = async () => {
+      // We need to convert the month name back to index
+      // This is not ideal - let's improve this by passing monthIndex directly
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      
+      // Try to find month index - this is a fallback approach
+      let monthIndex = monthNames.findIndex(name => name.toLowerCase() === month.toLowerCase());
+      
+      // If not found, try German month names
+      if (monthIndex === -1) {
+        const germanMonths = [
+          'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+          'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+        ];
+        monthIndex = germanMonths.findIndex(name => name === month);
+      }
+      
+      if (monthIndex !== -1) {
+        // Calculate total photos processed (photos to delete + photos that were kept)
+        const totalProcessed = photosToDelete.length + (photos.length - photosToDelete.length);
+        
+        await markMonthCompleted(
+          year,
+          monthIndex,
+          totalProcessed, // Total photos processed
+          photosToDelete.length // Photos to be deleted
+        );
+      } else {
+        console.warn('Could not determine month index for:', month);
+      }
+    };
+
+    markCompleted();
+  }, [month, year, photosToDelete.length, photos.length, markMonthCompleted]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

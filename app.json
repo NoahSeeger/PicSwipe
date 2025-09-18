@@ -10,7 +10,7 @@
       "icon": "./assets/images/picswipe.icon",
       "supportsTablet": false,
       "bundleIdentifier": "com.noahseeger.picswipe",
-      "buildNumber": "11",
+      "buildNumber": "12",
       "userInterfaceStyle": "automatic",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
