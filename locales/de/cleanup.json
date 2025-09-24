@@ -16,7 +16,7 @@
     },
     "loading": {
       "searchingPhotos": "Suche Fotos...",
-      "loadingFirst": "Lade erste {count} Fotos...",
+      "loadingFirst": "Lade erste {{count}} Fotos...",
       "readyToSort": "Bereit zum Sortieren! Weitere Fotos werden im Hintergrund geladen...",
       "allPhotosLoaded": "Alle Fotos geladen!"
     },

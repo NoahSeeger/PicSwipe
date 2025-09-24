@@ -3,12 +3,12 @@ import { useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as StoreReview from "expo-store-review";
 
-const REVIEW_PROMPT_SWIPES = 10; // Nach 10 Swipes fragen
+const REVIEW_PROMPT_SWIPES = 60; // Nach 60 Swipes fragen
 const STORAGE_KEY_REVIEWED = "hasReviewed";
 const STORAGE_KEY_LAST_PROMPT = "lastReviewPromptDate";
 const STORAGE_KEY_PROMPT_COUNT = "reviewPromptCount";
 const DAYS_BETWEEN_PROMPTS = 2; // Nach 2 Tagen nochmal fragen
-const MAX_PROMPTS = 70; // Nach 70 Prompts aufhören
+const MAX_PROMPTS = 3; // Nach 70 Prompts aufhören
 
 export const useReviewPrompt = (currentSwipes: number) => {
   useEffect(() => {
