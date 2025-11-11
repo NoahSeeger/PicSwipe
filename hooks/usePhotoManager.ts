@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Platform } from "react-native";
 import * as MediaLibrary from "expo-media-library";
-import * as FileSystem from "expo-file-system";
+import { File } from "expo-file-system";
+import { logger } from "@/utils/logger";
 
 export type PhotoToDelete = {
   id: string;
@@ -40,12 +41,17 @@ const getAssetInfo = async (
       }
 
       let fileSize = 0;
-      // Versuche echte Dateigröße zu ermitteln
+      // Versuche echte Dateigröße zu ermitteln mit neuer File API
       try {
         if (info.localUri.startsWith("file://")) {
-          const fileInfo = await FileSystem.getInfoAsync(info.localUri);
-          if (fileInfo.exists && "size" in fileInfo) {
-            fileSize = fileInfo.size;
+          const file = new File(info.localUri);
+          try {
+            const size = file.size;
+            fileSize = size || estimatePhotoSize(asset.width, asset.height);
+          } catch (sizeError) {
+            console.warn("Could not get file size with new API:", sizeError);
+            // Fallback auf Schätzung
+            fileSize = estimatePhotoSize(asset.width, asset.height);
           }
         }
       } catch (sizeError) {
@@ -176,10 +182,9 @@ export const usePhotoManager = () => {
     eagerLoadCount: number = 5
   ) => {
     try {
-      console.log("Loading photos with params:", {
-        date,
+      logger.info("PhotoManager", `Loading photos for ${date ? 'month' : 'album'}`, {
         albumId,
-        eagerLoadCount,
+        month: date?.toISOString(),
       });
       setIsLoading(true);
       setLoadingState({
@@ -232,7 +237,7 @@ export const usePhotoManager = () => {
       }
 
       if (rawAssets.length === 0) {
-        console.log("No photos found");
+        logger.info("PhotoManager", "No photos found for this period");
         if (date && !albumId) {
           handleNoPhotos(date);
         }
@@ -335,14 +340,15 @@ export const usePhotoManager = () => {
       }
 
       setIsMonthComplete(false);
-    } catch (error) {
-      console.error("Error loading photos:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleNoPhotos = async (date: Date) => {
+      } catch (error) {
+        logger.error("PhotoManager", "Error loading photos", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };  const handleNoPhotos = async (date: Date) => {
+    logger.info("PhotoManager", "Moving to previous month", {
+      currentMonth: date.toISOString(),
+    });
     const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
     setProcessedMonths((prev) => new Set(prev).add(monthKey));
     const prevMonth = new Date(date.getFullYear(), date.getMonth() - 1, 1);
@@ -362,21 +368,26 @@ export const usePhotoManager = () => {
 
     try {
       if (Platform.OS === "ios" && asset.uri.startsWith("file://")) {
-        const fileInfo = await FileSystem.getInfoAsync(asset.uri);
-        if (fileInfo.exists && "size" in fileInfo) {
-          return fileInfo.size;
+        const file = new File(asset.uri);
+        try {
+          const size = file.size;
+          if (size) {
+            return size;
+          }
+        } catch (sizeError) {
+          logger.debug("PhotoManager", "Could not get file size with new API", sizeError);
         }
       }
 
       const assetInfo = await MediaLibrary.getAssetInfoAsync(asset.id);
-      // @ts-ignore
       return (
+        // @ts-ignore - fileSize exists in info but not in types
         assetInfo.fileSize ||
         asset.fileSize ||
         estimatePhotoSize(asset.width, asset.height)
       );
     } catch (error) {
-      console.error("Error getting actual file size:", error);
+      logger.error("PhotoManager", "Error getting actual file size", error);
       return asset.fileSize || estimatePhotoSize(asset.width, asset.height);
     }
   };
@@ -414,7 +425,7 @@ export const usePhotoManager = () => {
           ]);
         }
       } catch (error) {
-        console.error("Error adding photo to delete list:", error);
+        logger.error("PhotoManager", "Error adding photo to delete list", error);
       }
     }
 
@@ -454,7 +465,7 @@ export const usePhotoManager = () => {
 
       return true;
     } catch (error) {
-      console.error("Error deleting photos:", error);
+      logger.error("PhotoManager", "Error deleting photos", error);
       return false;
     }
   };
@@ -493,7 +504,7 @@ export const usePhotoManager = () => {
         1
       );
     } catch (error) {
-      console.error("Error finding previous month with photos:", error);
+      logger.error("PhotoManager", "Error finding previous month with photos", error);
       return null;
     }
   }, []);
@@ -529,11 +540,10 @@ export const usePhotoManager = () => {
     albumId?: string,
     eagerLoadCount: number = 5
   ) => {
-    console.log("PhotoManager: setInitialMonth called", {
+    logger.info("PhotoManager", "Initialize month/album", {
       year,
       month,
       albumId,
-      eagerLoadCount,
     });
 
     try {
@@ -549,7 +559,7 @@ export const usePhotoManager = () => {
         await loadPhotos(date, null, eagerLoadCount);
       }
     } catch (error) {
-      console.error("PhotoManager: Error in setInitialMonth:", error);
+      logger.error("PhotoManager", "Error in setInitialMonth", error);
     } finally {
       setIsLoading(false);
     }

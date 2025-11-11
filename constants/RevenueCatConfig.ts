@@ -10,10 +10,12 @@ const REVENUECAT_API_KEY = "appl_AfqyHTRArOyTHiRDAvgWKmWqTWM";
  */
 export const configureRevenueCat = (): void => {
   try {
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+    // Nur Debug Logs in Development, sonst nur Errors
+    const logLevel = __DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR;
+    Purchases.setLogLevel(logLevel);
     Purchases.configure({ apiKey: REVENUECAT_API_KEY });
-    console.log(`[RevenueCat] Konfiguriert für ${Platform.OS} mit Key: ${REVENUECAT_API_KEY.substring(0, 10)}...`);
+    console.log(`[RevenueCat] Configured for ${Platform.OS}`);
   } catch (error) {
-    console.error('[RevenueCat] Konfigurationsfehler:', error);
+    console.error('[RevenueCat] Configuration error:', error);
   }
 };

@@ -5,7 +5,9 @@
     "version": "1.0.4",
     "orientation": "portrait",
     "scheme": "picswipe",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "icon": "./assets/images/picswipe.icon",
       "supportsTablet": false,
@@ -52,7 +54,9 @@
         {
           "photosPermission": "PicSwipe verwendet den Zugriff auf deine Fotos, um Galerie-Funktionen bereitzustellen (z. B. Organisieren und Speicherplatz sparen)."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
