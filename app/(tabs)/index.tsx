@@ -9,7 +9,7 @@ import {
   Animated,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useMonthData, type LoadingState } from "@/hooks/useMonthData";
+import { useYearThumbnails, type YearLoadingState } from "@/hooks/useYearThumbnails";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearListItem } from "@/components/home/YearListItem";
 import { YearListSkeleton } from "@/components/home/YearListSkeleton";
@@ -20,9 +20,9 @@ import { useProgress } from "@/hooks/useProgress";
 import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen() {
-  const { yearData, isLoading, loadingState, progress, refreshData } = useMonthData();
+  const { years, isLoading, loadingState, progress, refreshData } = useYearThumbnails();
   const insets = useSafeAreaInsets();
-  const totalPhotos = yearData.reduce((sum, year) => sum + year.totalPhotos, 0);
+  const totalPhotos = years.reduce((sum, year) => sum + year.totalPhotos, 0);
   const { colors, isDark } = useTheme();
   const { t } = useI18n('home');
   const { refreshProgress } = useProgress();
@@ -122,7 +122,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <StatusBar style={isDark ? "light" : "dark"} />
       {/* Nur den Ladescreen anzeigen, wenn wir im initialen Ladezustand sind und keine Daten haben */}
-      {isLoading && loadingState === 'initial' && yearData.length === 0 ? (
+      {isLoading && loadingState === 'initial' && years.length === 0 ? (
         <View style={[styles.loadingContainer, { paddingTop: insets.top + 8 }]}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>{t('loading.photos')}</Text>
@@ -196,17 +196,17 @@ export default function HomeScreen() {
 
           <View style={styles.listContainer}>
             {/* Wenn keine Daten geladen sind aber Ladevorgang läuft, zeige Skeleton */}
-            {yearData.length === 0 ? (
+            {years.length === 0 ? (
               /* Zeige Skeleton-Ladeanzeige während der Ladezeit */
               <YearListSkeleton count={8} />
             ) : (
               /* Zeige geladene Daten an */
               <>
-                {yearData.map((year) => (
+                {years.map((year) => (
                   <YearListItem
                     key={`${year.year}-${refreshKey}`}
                     year={year.year}
-                    months={year.months.map((m) => ({ month: m.monthIndex + 1 }))}
+                    months={year.months.map((m) => ({ month: m.month }))}
                     totalPhotos={year.totalPhotos}
                     thumbnailUri={year.thumbnailUri}
                     onPress={() => handleYearPress(year.year)}

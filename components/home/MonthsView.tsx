@@ -22,7 +22,7 @@ export function MonthsView({ year, onClose }: Props) {
   const router = useRouter();
   const { colors } = useTheme();
   const { t } = useI18n('home');
-  const { months, isLoading, loadingState, progress } = useMonthThumbnails(year);
+  const { months, isLoading, loadingState, progress, refreshData } = useMonthThumbnails(year);
   const { refreshProgress } = useProgress();
   const [refreshKey, setRefreshKey] = React.useState(0);
   
