@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import * as MediaLibrary from "expo-media-library";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -22,9 +22,12 @@ export function useMonthThumbnails(year: number) {
   const [loadingState, setLoadingState] = useState<MonthLoadingState>('initial');
   const [progress, setProgress] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // useRef um Memory Leaks zu verhindern
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    let isMounted = true;
+    isMountedRef.current = true;
     async function load() {
       setIsLoading(true);
       setLoadingState('initial');
@@ -43,17 +46,14 @@ export function useMonthThumbnails(year: number) {
           
           // Wenn der Cache frisch genug ist, nutze ihn
           if (now - timestamp < CACHE_DURATION) {
-            const parsedData = JSON.parse(cachedData);
-            if (isMounted) {
+            const parsedData = JSON.parse(cachedData) as MonthThumbnail[];
+            if (isMountedRef.current) {
               setMonths(parsedData);
               setLoadingState('complete');
               setProgress(100);
               setIsLoading(false);
-              
-              // Aktualisiere im Hintergrund
-              setTimeout(() => loadMonthDataFromScratch(), 100);
-              return;
             }
+            return; // ✅ KEIN Hintergrund-Reload mehr!
           }
         }
       } catch (error) {
@@ -65,43 +65,47 @@ export function useMonthThumbnails(year: number) {
     }
     
     async function loadMonthDataFromScratch() {
-      if (!isMounted) return;
+      if (!isMountedRef.current) return;
       
-      setLoadingState('loading-photos');
-      setProgress(10);
-      
-      // 1. Lade NUR Assets des gewünschten Jahres (optimiert mit Date-Filter)
-      const startOfYear = new Date(year, 0, 1).getTime();
-      const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999).getTime();
-      
-      let allAssets: MediaLibrary.Asset[] = [];
-      let hasNextPage = true;
-      let after: string | undefined = undefined;
-      
-      const BATCH_SIZE = 5000; // Kleinere Batches für ein einzelnes Jahr
-      
-      while (hasNextPage) {
-        const { assets, hasNextPage: more } = await MediaLibrary.getAssetsAsync({
-          mediaType: MediaLibrary.MediaType.photo,
-          first: BATCH_SIZE,
-          after,
-          sortBy: MediaLibrary.SortBy.creationTime,
-          createdAfter: startOfYear,
-          createdBefore: endOfYear,
-        });
+      try {
+        setLoadingState('loading-photos');
+        setProgress(10);
         
-        allAssets = [...allAssets, ...assets];
-        hasNextPage = more;
-        after = assets[assets.length - 1]?.id;
+        // 1. Lade NUR Assets des gewünschten Jahres (optimiert mit Date-Filter)
+        const startOfYear = new Date(year, 0, 1).getTime();
+        const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999).getTime();
         
-        // Update progress während des Ladens
-        const loadProgress = Math.min(50, 10 + (allAssets.length / 1000) * 40);
-        if (isMounted) {
-          setProgress(loadProgress);
+        let allAssets: MediaLibrary.Asset[] = [];
+        let hasNextPage = true;
+        let after: string | undefined = undefined;
+        
+        const BATCH_SIZE = 5000; // Kleinere Batches für ein einzelnes Jahr
+        
+        while (hasNextPage) {
+          if (!isMountedRef.current) return; // Safety check in loop
+          
+          const { assets, hasNextPage: more } = await MediaLibrary.getAssetsAsync({
+            mediaType: MediaLibrary.MediaType.photo,
+            first: BATCH_SIZE,
+            after,
+            sortBy: MediaLibrary.SortBy.creationTime,
+            createdAfter: startOfYear,
+            createdBefore: endOfYear,
+          });
+          
+          // ✅ push() statt spread - viel schneller bei großen Arrays!
+          allAssets.push(...assets);
+          hasNextPage = more;
+          after = assets[assets.length - 1]?.id;
+          
+          // Update progress während des Ladens
+          const loadProgress = Math.min(60, 10 + (allAssets.length / 500) * 50);
+          if (isMountedRef.current) {
+            setProgress(loadProgress);
+          }
+          
+          if (!more) break;
         }
-        
-        if (!more) break;
-      }
       
       // 2. Gruppiere Assets nach Monat
       setLoadingState('processing-months');
@@ -109,7 +113,7 @@ export function useMonthThumbnails(year: number) {
       
       const monthStructure = buildMonthStructure(allAssets, year);
       
-      if (isMounted) {
+      if (isMountedRef.current) {
         setMonths(monthStructure);
         setProgress(70);
       }
@@ -183,7 +187,7 @@ export function useMonthThumbnails(year: number) {
       // Entferne cacheEntry aus dem finalen Objekt
       const finalMonths = monthsWithThumbnails.map(({ cacheEntry, ...month }) => month);
       
-      if (isMounted) {
+      if (isMountedRef.current) {
         setMonths(finalMonths);
         setProgress(90);
       }
@@ -201,20 +205,26 @@ export function useMonthThumbnails(year: number) {
         console.log("Month cache saving error:", error);
       }
       
-      // Finalize
-      if (isMounted) {
-        setMonths(finalMonths);
-        setProgress(100);
-        setLoadingState('complete');
-        setIsLoading(false);
+        
+        // Finalize
+        if (isMountedRef.current) {
+          setMonths(finalMonths);
+          setProgress(100);
+          setLoadingState('complete');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Error loading month data:", error);
+        if (isMountedRef.current) {
+          setLoadingState('complete');
+          setIsLoading(false);
+        }
       }
     }
     
     load();
-    return () => { isMounted = false; };
-  }, [year, refreshTrigger]);
-
-  const refreshData = useCallback(() => {
+    return () => { isMountedRef.current = false; };
+  }, [year, refreshTrigger]);  const refreshData = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
 

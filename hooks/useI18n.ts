@@ -84,7 +84,20 @@ export const useNumberFormat = () => {
       unitIndex++;
     }
     
-    return `${formatNumber(Math.round(size * 100) / 100)} ${units[unitIndex]}`;
+    // ✅ Nutzerfreundliche Rundung: Keine Dezimalstellen für große Zahlen
+    let roundedSize: number;
+    if (size >= 100) {
+      // > 100 KB/MB/GB: Keine Dezimalstellen (z.B. "156 MB")
+      roundedSize = Math.round(size);
+    } else if (size >= 10) {
+      // 10-100 KB/MB/GB: Ganze Zahlen (z.B. "45 MB")
+      roundedSize = Math.round(size);
+    } else {
+      // < 10 KB/MB/GB: 1 Dezimalstelle (z.B. "4.5 MB")
+      roundedSize = Math.round(size * 10) / 10;
+    }
+    
+    return `${formatNumber(roundedSize)} ${units[unitIndex]}`;
   };
   
   return {

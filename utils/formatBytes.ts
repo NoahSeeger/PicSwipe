@@ -5,9 +5,20 @@ export function formatBytes(bytes: number): string {
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  // Runde auf maximal eine Dezimalstelle
+  // ✅ Nutzerfreundliche Rundung: Keine Dezimalstellen für große Zahlen
   const value = bytes / Math.pow(k, i);
-  const roundedValue = Math.round(value * 10) / 10;
+  let roundedValue: number;
+  
+  if (value >= 100) {
+    // > 100: Keine Dezimalstellen (z.B. "156 MB")
+    roundedValue = Math.round(value);
+  } else if (value >= 10) {
+    // 10-100: Ganze Zahlen (z.B. "45 MB")
+    roundedValue = Math.round(value);
+  } else {
+    // < 10: 1 Dezimalstelle (z.B. "4.5 MB")
+    roundedValue = Math.round(value * 10) / 10;
+  }
 
   return `${roundedValue} ${sizes[i]}`;
 }
