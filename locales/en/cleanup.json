@@ -27,7 +27,9 @@
       "preparingPhotos": "Preparing photos...",
       "loadingProgress": "{{current}} of {{total}} loaded",
       "loadingFirst": "Loading first {{count}} photos...",
-      "loadingRemaining": "Loading more photos in the background..."
+      "loadingRemaining": "Loading more photos in the background...",
+      "nextPhotoLoading": "Loading next photo...",
+      "pleaseWait": "Please wait a moment"
     },
     "deletePreview": {
       "title": "Photos to delete",

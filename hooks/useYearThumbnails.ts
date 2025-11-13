@@ -74,8 +74,8 @@ export function useYearThumbnails() {
         let hasNextPage = true;
         let after: string | undefined = undefined;
         
-        // Verwende kleinere Batches für bessere Performance
-        const BATCH_SIZE = 10000;
+        // Optimierte Batch-Größe für bessere Performance
+        const BATCH_SIZE = 5000;
         
         // ✅ KEINE separate totalCount Query mehr!
         
@@ -100,8 +100,8 @@ export function useYearThumbnails() {
             setProgress(loadProgress);
           }
           
-          // ✅ Zeige Zwischenergebnisse nur alle 2000 Fotos (nicht jede 1000)
-          if ((allAssets.length % 2000 === 0 && allAssets.length >= 2000) || !more) {
+          // ✅ Zeige Zwischenergebnisse nur alle 3000 Fotos (Memory-optimiert)
+          if ((allAssets.length % 3000 === 0 && allAssets.length >= 3000) || !more) {
             const prelimYears = buildYearStructure(allAssets);
             if (isMountedRef.current) {
               setYears(prelimYears);
@@ -225,6 +225,9 @@ export function useYearThumbnails() {
     // Cleanup function
     return () => {
       isMountedRef.current = false;
+      // 🧹 Cleanup: Assets freigeben wenn Component unmounted
+      // Die thumbnailUri Strings bleiben im Cache, aber die Asset-Objekte werden freigegeben
+      setYears([]);
     };
   }, [refreshTrigger]);
 

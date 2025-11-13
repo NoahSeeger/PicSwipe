@@ -19,7 +19,8 @@ type MonthCompleteScreenProps = {
   onRemovePhoto: (id: string) => void;
   isLastMonth: boolean;
   nextMonthLabel?: string;
-  uniqueMonthsCount?: number; // Neue Eigenschaft
+  uniqueMonthsCount?: number;
+  prefetchNextMonth?: () => Promise<boolean>; // 🚀 NEU: Prefetch Funktion
 };
 
 export function MonthCompleteScreen({
@@ -34,6 +35,7 @@ export function MonthCompleteScreen({
   isLastMonth,
   nextMonthLabel,
   uniqueMonthsCount,
+  prefetchNextMonth,
 }: MonthCompleteScreenProps) {
   const { colors } = useTheme();
   const { t } = useI18n('cleanup');
@@ -79,6 +81,23 @@ export function MonthCompleteScreen({
 
     markCompleted();
   }, [month, year, photosToDelete.length, photos.length, markMonthCompleted]);
+
+  // 🚀 Prefetch nächsten Monat im Hintergrund für instant Loading
+  React.useEffect(() => {
+    if (!prefetchNextMonth || isLastMonth) {
+      return;
+    }
+
+    // Warte 1s damit MonthCompleteScreen smooth animiert
+    // Dann starte Prefetch im Hintergrund
+    const timer = setTimeout(() => {
+      prefetchNextMonth().catch((error) => {
+        console.debug('Prefetch failed (non-critical):', error);
+      });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [prefetchNextMonth, isLastMonth]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

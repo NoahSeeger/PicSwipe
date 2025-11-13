@@ -23,6 +23,8 @@ export default function SettingsScreen() {
   
   // State für RevenueCat-Informationen
   const [loading, setLoading] = useState(false);
+  const [devOptionsCollapsed, setDevOptionsCollapsed] = useState(true);
+  const [tapCount, setTapCount] = useState(0);
   const [subscription, setSubscription] = useState<{
     isActive: boolean;
     productName: string;
@@ -46,6 +48,38 @@ export default function SettingsScreen() {
       );
     } catch (error) {
       Alert.alert("Fehler", "Konnte Swipes nicht setzen");
+    }
+  };
+
+  // 🔐 SECRET: Reset Swipes (Triple-Tap aktiviert)
+  const resetSwipes = async () => {
+    try {
+      const today = new Date().toDateString();
+      await AsyncStorage.setItem("swipe_date", today);
+      await AsyncStorage.setItem("swipe_count", "0");
+      await loadSwipes();
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      Alert.alert(
+        "🔓 Swipes zurückgesetzt",
+        "Deine täglichen Swipes wurden auf 0 zurückgesetzt.",
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      Alert.alert("Fehler", "Konnte Swipes nicht zurücksetzen");
+    }
+  };
+
+  // Triple-Tap Handler für Secret Feature
+  const handleVersionTap = () => {
+    setTapCount(prev => prev + 1);
+    
+    // Reset nach 2 Sekunden
+    setTimeout(() => setTapCount(0), 2000);
+    
+    // Triple-Tap erkannt
+    if (tapCount + 1 === 3) {
+      resetSwipes();
+      setTapCount(0);
     }
   };
 
@@ -300,7 +334,7 @@ export default function SettingsScreen() {
       flex: 1,
       padding: 20,
       paddingTop: insets.top,
-      paddingBottom: insets.bottom + 100, // Extra space for tab bar
+      paddingBottom: insets.bottom + 150, // Extra space for tab bar + version text
       backgroundColor: colors.background,
     },
     section: {
@@ -401,6 +435,19 @@ export default function SettingsScreen() {
       fontSize: 16,
       color: colors.text,
     },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 15,
+    },
+    version: {
+      textAlign: 'center',
+      fontSize: 14,
+      marginTop: 40,
+      marginBottom: 20,
+      opacity: 0.6,
+    },
   });
 
   // Warte bis i18n initialisiert ist
@@ -498,7 +545,18 @@ export default function SettingsScreen() {
       
       {/* Entwickleroptionen */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Entwickleroptionen</Text>
+        <Pressable 
+          style={styles.sectionHeader}
+          onPress={() => setDevOptionsCollapsed(!devOptionsCollapsed)}
+        >
+          <Text style={styles.sectionTitle}>Entwickleroptionen</Text>
+          <IconSymbol
+            name={devOptionsCollapsed ? "chevron.right" : "chevron.down"}
+            size={20}
+            color={colors.textSecondary}
+          />
+        </Pressable>
+        {!devOptionsCollapsed && (
         <View style={styles.devOptions}>
           {/* <Text style={styles.button} onPress={resetOnboarding}>
             Onboarding zurücksetzen
@@ -525,7 +583,15 @@ export default function SettingsScreen() {
             💥 Kompletten Progress zurücksetzen
           </Text>
         </View>
+        )}
       </View>
+
+      {/* 🔐 Secret: Triple-Tap on Version to reset swipes */}
+      <Pressable onPress={handleVersionTap}>
+        <Text style={[styles.version, { color: colors.text }]}> 
+          Version 1.0.0
+        </Text>
+      </Pressable>
     </ScrollView>
   );
 }

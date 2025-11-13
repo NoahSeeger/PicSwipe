@@ -153,8 +153,8 @@ export function DeletePreviewModal({
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {photos.map((photo) => (
-              <View key={photo.id} style={styles.photoContainer}>
+            {photos.map((photo, index) => (
+              <View key={`${photo.id}-${index}`} style={styles.photoContainer}>
                 <TouchableOpacity
                   style={styles.removeButton}
                   onPress={() => onRemovePhoto(photo.id)}

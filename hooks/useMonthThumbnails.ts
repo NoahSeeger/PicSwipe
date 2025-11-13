@@ -79,7 +79,7 @@ export function useMonthThumbnails(year: number) {
         let hasNextPage = true;
         let after: string | undefined = undefined;
         
-        const BATCH_SIZE = 5000; // Kleinere Batches für ein einzelnes Jahr
+        const BATCH_SIZE = 3000; // Optimiert für ein einzelnes Jahr
         
         while (hasNextPage) {
           if (!isMountedRef.current) return; // Safety check in loop
@@ -223,7 +223,12 @@ export function useMonthThumbnails(year: number) {
     }
     
     load();
-    return () => { isMountedRef.current = false; };
+    return () => { 
+      isMountedRef.current = false;
+      // 🧹 Cleanup: Assets freigeben wenn Component unmounted
+      // Die thumbnailUri Strings bleiben im Cache, aber die Asset-Objekte werden freigegeben
+      setMonths([]);
+    };
   }, [year, refreshTrigger]);  const refreshData = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);

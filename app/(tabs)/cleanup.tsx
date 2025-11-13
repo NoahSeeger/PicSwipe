@@ -94,6 +94,8 @@ export default function CleanupScreen() {
     currentAlbumTitle,
     getNextMonthLabel, // Neue Funktion
     uniqueMonthsCount, // Neue Eigenschaft für kumulative Löschungen
+    isNextPhotoLoading, // 🔥 NEU: Zeigt ob nächstes Foto lädt
+    prefetchNextMonth, // 🚀 NEU: Prefetch nächsten Monat
   } = usePhotoManager();
 
   const { swipes, incrementSwipe, hasReachedLimit, isPro, loadSwipes, refreshProStatus } = useSwipeLimit();
@@ -241,21 +243,21 @@ export default function CleanupScreen() {
           progress: { current: 0, total: Math.max(loadingProgress.total, 1) },
           message: t('loading.searchingPhotos'),
         };
-      case "eager":
+      case "loading":
         return {
           progress: {
             current: loadingProgress.current,
-            total: Math.min(loadingProgress.eagerCount, loadingProgress.total),
+            total: Math.min(loadingProgress.priorityCount, loadingProgress.total),
           },
           message: t('loading.loadingFirst', { 
-            count: Math.min(loadingProgress.eagerCount, loadingProgress.total) 
+            count: Math.min(loadingProgress.priorityCount, loadingProgress.total) 
           }),
         };
       case "background":
         return {
           progress: {
-            current: loadingProgress.eagerCount,
-            total: loadingProgress.eagerCount,
+            current: loadingProgress.priorityCount,
+            total: loadingProgress.priorityCount,
           },
           message: t('loading.readyToSort'),
         };
@@ -275,14 +277,8 @@ export default function CleanupScreen() {
     }
   };
 
-  console.log("isLoading", isLoading);
-
-  // Zeige LoadingScreen nur wenn initial geladen wird oder eager loading noch nicht fertig
-  if (
-    isLoading ||
-    (loadingProgress.phase === "eager" &&
-      loadingProgress.current < loadingProgress.eagerCount)
-  ) {
+  // Zeige LoadingScreen nur während loading Phase
+  if (isLoading || loadingProgress.phase === "loading") {
     const loadingProps = getLoadingScreenProps();
     return (
       <LoadingScreen
@@ -328,6 +324,7 @@ export default function CleanupScreen() {
         isLastMonth={isLastMonth}
         nextMonthLabel={nextMonthLabel}
         uniqueMonthsCount={uniqueMonthsCount}
+        prefetchNextMonth={prefetchNextMonth}
       />
     );
   }
@@ -358,6 +355,49 @@ export default function CleanupScreen() {
             onSwipe={handleSwipeWithPaywall}
             onPress={() => setIsFullscreen(true)}
           />
+
+          {/* 🛑 Loading Overlay wenn nächstes Foto noch lädt */}
+          {isNextPhotoLoading && (
+            <View
+              style={{
+                position: "absolute",
+                top: "50%",
+                alignSelf: "center",
+                backgroundColor: colors.background,
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderRadius: 12,
+                opacity: 0.95,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 5,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                  textAlign: "center",
+                }}
+              >
+                ⏳ {t('loadingScreen.nextPhotoLoading')}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: colors.text,
+                  opacity: 0.7,
+                  marginTop: 4,
+                  textAlign: "center",
+                }}
+              >
+                {t('loadingScreen.pleaseWait')}
+              </Text>
+            </View>
+          )}
 
           <Modal
             visible={isFullscreen}
