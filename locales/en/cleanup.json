@@ -16,7 +16,7 @@
     },
     "loading": {
       "searchingPhotos": "Searching photos...",
-      "loadingFirst": "Loading first {count} photos...",
+      "loadingFirst": "Loading first {{count}} photos...",
       "readyToSort": "Ready to sort! More photos are loading in the background...",
       "allPhotosLoaded": "All photos loaded!"
     },
@@ -29,7 +29,8 @@
       "loadingFirst": "Loading first {{count}} photos...",
       "loadingRemaining": "Loading more photos in the background...",
       "nextPhotoLoading": "Loading next photo...",
-      "pleaseWait": "Please wait a moment"
+      "pleaseWait": "Please wait a moment",
+      "smallLoadingMore": "Loading more photos..."
     },
     "deletePreview": {
       "title": "Photos to delete",

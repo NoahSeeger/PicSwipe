@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Constants from 'expo-constants';
 import { View, Text, StyleSheet, Alert, TouchableOpacity, Linking, ActivityIndicator, Pressable, ScrollView } from "react-native";
 import RevenueCatUI from "react-native-purchases-ui";
 import Purchases from "react-native-purchases";
@@ -589,7 +590,7 @@ export default function SettingsScreen() {
       {/* 🔐 Secret: Triple-Tap on Version to reset swipes */}
       <Pressable onPress={handleVersionTap}>
         <Text style={[styles.version, { color: colors.text }]}> 
-          Version 1.0.0
+          Version {Constants.manifest.version}
         </Text>
       </Pressable>
     </ScrollView>

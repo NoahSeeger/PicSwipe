@@ -162,38 +162,61 @@ export default function CleanupScreen() {
     }
   };
 
-  useEffect(() => {
-    const loadPhotos = async () => {
-      try {
-        // Optimierte Eager Loading-Konfiguration
-        const eagerLoadCount = 5; // Lade 5 Bilder initial
-
-        if (albumId) {
-          await setInitialMonth(0, 0, albumId, eagerLoadCount);
-        } else if (year && month) {
-          await setInitialMonth(
-            parseInt(year),
-            parseInt(month),
-            undefined,
-            eagerLoadCount
-          );
-        } else {
-          // Smart navigation: Go to newest uncompleted month
-          const { year: targetYear, month: targetMonth } = await findNewestUncompletedMonth();
-          await setInitialMonth(
-            targetYear,
-            targetMonth,
-            undefined,
-            eagerLoadCount
-          );
-        }
-      } catch (error) {
-        console.error("Error loading photos:", error);
+  // Ref um zu tracken ob initial load bereits passiert ist
+  const hasInitialLoadRef = React.useRef(false);
+  
+  // Nutze useFocusEffect für den initial load - wird nur beim ersten Focus ausgeführt
+  useFocusEffect(
+    React.useCallback(() => {
+      // Nur laden wenn noch nicht geladen (verhindert Re-Load bei Tab-Wechseln)
+      if (hasInitialLoadRef.current) {
+        return;
       }
-    };
+      
+      const loadPhotos = async () => {
+        try {
+          // Optimierte Eager Loading-Konfiguration
+          const eagerLoadCount = 5; // Lade 5 Bilder initial
 
-    loadPhotos();
-  }, [year, month, albumId, isMonthCompleted]);
+          if (albumId) {
+            await setInitialMonth(0, 0, albumId, eagerLoadCount);
+          } else if (year && month) {
+            await setInitialMonth(
+              parseInt(year),
+              parseInt(month),
+              undefined,
+              eagerLoadCount
+            );
+          } else {
+            // Smart navigation: Go to newest uncompleted month
+            const { year: targetYear, month: targetMonth } = await findNewestUncompletedMonth();
+            await setInitialMonth(
+              targetYear,
+              targetMonth,
+              undefined,
+              eagerLoadCount
+            );
+          }
+          
+          // Markiere als geladen
+          hasInitialLoadRef.current = true;
+        } catch (error) {
+          console.error("Error loading photos:", error);
+        }
+      };
+
+      loadPhotos();
+    }, [year, month, albumId])
+  );
+  
+  // Separater useEffect nur für URL-Parameter-Änderungen (z.B. von außen navigiert)
+  useEffect(() => {
+    // Reset wenn sich year, month oder albumId von außen ändern
+    // Das passiert nur bei Navigation von Home/Albums zur Cleanup-Page
+    if (hasInitialLoadRef.current && (year || month || albumId)) {
+      hasInitialLoadRef.current = false; // Reset für neuen Load
+    }
+  }, [year, month, albumId]);
 
   // Berechne das Label für den nächsten Monat nur wenn der Monat abgeschlossen ist
   useEffect(() => {
@@ -437,8 +460,7 @@ export default function CleanupScreen() {
               color: colors.text,
             }}
           >
-            Lade weitere Fotos... ({loadingProgress.current}/
-            {loadingProgress.total})
+            {t('loadingScreen.smallLoadingMore')} ({loadingProgress.current}/{loadingProgress.total})
           </Text>
         </View>
       )}

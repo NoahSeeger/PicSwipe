@@ -225,9 +225,7 @@ export function useMonthThumbnails(year: number) {
     load();
     return () => { 
       isMountedRef.current = false;
-      // 🧹 Cleanup: Assets freigeben wenn Component unmounted
-      // Die thumbnailUri Strings bleiben im Cache, aber die Asset-Objekte werden freigegeben
-      setMonths([]);
+      // ℹ️ Kein Reset von setMonths([]) mehr - Thumbnails bleiben beim Tab-Wechsel erhalten
     };
   }, [year, refreshTrigger]);  const refreshData = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);

@@ -225,9 +225,7 @@ export function useYearThumbnails() {
     // Cleanup function
     return () => {
       isMountedRef.current = false;
-      // 🧹 Cleanup: Assets freigeben wenn Component unmounted
-      // Die thumbnailUri Strings bleiben im Cache, aber die Asset-Objekte werden freigegeben
-      setYears([]);
+      // ℹ️ Kein Reset von setYears([]) mehr - Thumbnails bleiben beim Tab-Wechsel erhalten
     };
   }, [refreshTrigger]);
 

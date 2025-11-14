@@ -29,7 +29,8 @@
       "loadingFirst": "Lade erste {{count}} Fotos...",
       "loadingRemaining": "Lade weitere Fotos im Hintergrund...",
       "nextPhotoLoading": "Lädt nächstes Foto...",
-      "pleaseWait": "Bitte kurz warten"
+      "pleaseWait": "Bitte kurz warten",
+      "smallLoadingMore": "Lade weitere Fotos..."
     },
     "deletePreview": {
       "title": "Zu löschende Fotos", 
